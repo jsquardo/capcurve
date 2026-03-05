@@ -1,15 +1,10 @@
 {
   "name": "CapCurve Dev",
-  "dockerComposeFile": ["../docker-compose.yml"],
+  "dockerComposeFile": [
+    "../docker-compose.yml"
+  ],
   "service": "backend",
   "workspaceFolder": "/app",
-
-  "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "22"
-    }
-  },
-
   "customizations": {
     "vscode": {
       "extensions": [
@@ -56,14 +51,22 @@
       }
     }
   },
-
-  "forwardPorts": [8080, 5173, 5432],
+  "forwardPorts": [
+    8080,
+    5173,
+    5432
+  ],
   "portsAttributes": {
-    "8080": { "label": "Go API" },
-    "5173": { "label": "React Frontend" },
-    "5432": { "label": "PostgreSQL" }
+    "8080": {
+      "label": "Go API"
+    },
+    "5173": {
+      "label": "React Frontend"
+    },
+    "5432": {
+      "label": "PostgreSQL"
+    }
   },
-
   "postCreateCommand": "go mod download",
   "remoteUser": "root"
 }
