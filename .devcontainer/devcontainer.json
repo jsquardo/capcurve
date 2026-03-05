@@ -1,0 +1,69 @@
+{
+  "name": "CapCurve Dev",
+  "dockerComposeFile": ["../docker-compose.yml"],
+  "service": "backend",
+  "workspaceFolder": "/app",
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "streetsidesoftware.code-spell-checker",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ckolkman.vscode-postgres",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens",
+        "usernamehw.errorlens",
+        "christian-kohler.path-intellisense",
+        "pkief.material-icon-theme"
+      ],
+      "settings": {
+        "go.toolsManagement.checkForUpdates": "local",
+        "go.useLanguageServer": true,
+        "go.formatTool": "goimports",
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "golang.go",
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": "explicit"
+        },
+        "sqltools.connections": [
+          {
+            "name": "CapCurve Local",
+            "driver": "PostgreSQL",
+            "host": "db",
+            "port": 5432,
+            "database": "capcurve_development",
+            "username": "capcurve",
+            "password": "capcurve_dev"
+          }
+        ]
+      }
+    }
+  },
+
+  "forwardPorts": [8080, 5173, 5432],
+  "portsAttributes": {
+    "8080": { "label": "Go API" },
+    "5173": { "label": "React Frontend" },
+    "5432": { "label": "PostgreSQL" }
+  },
+
+  "postCreateCommand": "go mod download",
+  "remoteUser": "root"
+}

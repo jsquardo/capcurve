@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: capcurve_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-capcurve}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-capcurve_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-capcurve_development}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U capcurve"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: capcurve_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-capcurve}:${POSTGRES_PASSWORD:-capcurve_dev}@db:5432/${POSTGRES_DB:-capcurve_development}?sslmode=disable
+      PORT: 8080
+      ENV: development
+      JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
+    volumes:
+      - ./backend:/app
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: capcurve_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:8080/api
+    volumes:
+      - ./frontend:/app
+      - node_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
+  go_mod_cache:
+  go_build_cache:
+  node_modules:

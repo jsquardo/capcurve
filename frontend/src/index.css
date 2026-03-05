@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&family=Bebas+Neue&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Bebas Neue';
+  --font-body: 'DM Sans';
+  --font-mono: 'DM Mono';
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  html {
+    @apply bg-surface text-white;
+    font-family: var(--font-body), sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { @apply min-h-screen; }
+  h1, h2, h3 {
+    font-family: var(--font-display), sans-serif;
+    letter-spacing: 0.02em;
+  }
+}
+
+@layer components {
+  .stat-value {
+    font-family: var(--font-mono), monospace;
+    @apply tabular-nums;
+  }
+  .card {
+    @apply bg-surface-raised rounded-xl border border-white/5 p-6;
+  }
+  .badge-value {
+    @apply bg-value/20 text-value text-xs font-semibold px-2 py-1 rounded-full;
+  }
+  .badge-overpaid {
+    @apply bg-overpaid/20 text-overpaid text-xs font-semibold px-2 py-1 rounded-full;
+  }
+  .badge-peak {
+    @apply bg-peak/20 text-peak text-xs font-semibold px-2 py-1 rounded-full;
+  }
+}
