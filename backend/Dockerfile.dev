@@ -1,6 +1,6 @@
 FROM golang:1.24-alpine
 
-RUN apk add --no-cache git curl bash
+RUN apk add --no-cache git curl bash make postgresql-client
 
 RUN go install github.com/air-verse/air@v1.61.7
 RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
