@@ -32,8 +32,8 @@ services:
       ENV: development
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
     volumes:
-      - .:/workspaces/CapCurve
       - ./backend:/app
+      - .:/workspaces/CapCurve
       - go_mod_cache:/go/pkg/mod
       - go_build_cache:/root/.cache/go-build
     ports:
