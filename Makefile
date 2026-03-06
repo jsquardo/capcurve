@@ -42,3 +42,13 @@ test:
 
 tidy:
 	docker compose exec backend go mod tidy
+
+# Run these from INSIDE the container
+migrate-local:
+	migrate -path /app/db/migrations -database "$(DATABASE_URL)" up
+
+migrate-down-local:
+	migrate -path /app/db/migrations -database "$(DATABASE_URL)" down 1
+
+db-local:
+	psql $(DATABASE_URL)

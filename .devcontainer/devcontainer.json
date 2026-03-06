@@ -67,6 +67,6 @@
       "label": "PostgreSQL"
     }
   },
-  "postCreateCommand": "go mod download",
+  "postCreateCommand": "cd /app && go mod download",
   "remoteUser": "root"
 }
