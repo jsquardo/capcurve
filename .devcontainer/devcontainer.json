@@ -51,21 +51,10 @@
       }
     }
   },
-  "forwardPorts": [
-    8080,
-    5173,
-    5432
-  ],
-  "portsAttributes": {
-    "8080": {
-      "label": "Go API"
-    },
-    "5173": {
-      "label": "React Frontend"
-    },
-    "5432": {
-      "label": "PostgreSQL"
-    }
+  "forwardPorts": [],
+  "portsAttributes": {},
+  "otherPortsAttributes": {
+    "onAutoForward": "ignore"
   },
   "postCreateCommand": "cd /app && go mod download",
   "remoteUser": "root"
