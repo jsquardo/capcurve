@@ -18,30 +18,51 @@ export interface SeasonStat {
   id: number
   player_id: number
   year: number
+  age: number
+  team_id: number
   team_name: string
   games_played: number
+  games_started: number
+  plate_appearances: number
   at_bats: number
   hits: number
+  doubles: number
+  triples: number
   home_runs: number
+  runs: number
   rbi: number
+  walks: number
+  strikeouts: number
   stolen_bases: number
   batting_avg: number
   obp: number
   slg: number
   ops: number
-  ops_plus: number
-  wrc_plus: number
+  babip: number
   wins: number
   losses: number
   era: number
-  era_plus: number
   whip: number
-  strikeouts: number
   innings_pitched: number
-  fip: number
-  war: number
+  hits_allowed: number
+  walks_allowed: number
+  home_runs_allowed: number
+  strikeouts_per_9: number
+  walks_per_9: number
+  hits_per_9: number
+  home_runs_per_9: number
+  strikeout_walk_ratio: number
+  strike_percentage: number
+  expected_batting_avg: number | null
+  expected_slugging: number | null
+  expected_woba: number | null
+  expected_era: number | null
+  barrel_pct: number | null
+  hard_hit_pct: number | null
+  avg_exit_velocity: number | null
+  avg_launch_angle: number | null
+  sweet_spot_pct: number | null
   value_score: number
-  war_per_dollar: number
 }
 
 export interface Contract {

@@ -1,0 +1,2 @@
+ALTER TABLE players
+    ALTER COLUMN position TYPE VARCHAR(30);

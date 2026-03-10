@@ -43,6 +43,12 @@ test:
 tidy:
 	docker compose exec backend go mod tidy
 
+go-build:
+	docker compose exec backend go build ./...
+
+go-build-local:
+	cd backend && go build ./...
+
 # Run these from INSIDE the container
 migrate-local:
 	migrate -path /app/db/migrations -database "$(DATABASE_URL)" up

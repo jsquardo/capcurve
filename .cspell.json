@@ -1,0 +1,12 @@
+{
+  "ignorePaths": [
+    ".devcontainer/**"
+  ],
+  "words": [
+    "jsquardo",
+    "capcurve",
+    "labstack",
+    "lmittmann",
+    "psql"
+  ]
+}
