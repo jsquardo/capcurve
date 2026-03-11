@@ -20,7 +20,8 @@
         "eamodio.gitlens",
         "usernamehw.errorlens",
         "christian-kohler.path-intellisense",
-        "pkief.material-icon-theme"
+        "pkief.material-icon-theme",
+        "openai.chatgpt"
       ],
       "settings": {
         "go.toolsManagement.checkForUpdates": "local",
