@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/jsquardo/capcurve/internal/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/jsquardo/capcurve/internal/models"
+	"github.com/jsquardo/capcurve/internal/scoring"
 )
 
 type Service struct {
 	db           *gorm.DB
 	mlbClient    *MLBClient
 	savantClient *SavantClient
+	scorer       *scoring.Service
 }
 
 // NewService wires the MLB fetcher, Savant fetcher, and database persistence into
@@ -30,6 +33,7 @@ func NewService(db *gorm.DB, mlbClient *MLBClient, savantClient *SavantClient) *
 		db:           db,
 		mlbClient:    mlbClient,
 		savantClient: savantClient,
+		scorer:       scoring.NewService(),
 	}
 }
 
@@ -144,6 +148,10 @@ func (s *Service) SyncPlayer(ctx context.Context, playerID int) (*models.Player,
 			}
 		}
 
+		if err := s.scorer.RecalculateYears(ctx, tx, seasonYears(seasonRecords)); err != nil {
+			return err
+		}
+
 		return tx.Preload("SeasonStats").First(&player, player.ID).Error
 	})
 	if err != nil {
@@ -210,6 +218,14 @@ func orderedSeasonRecords(records map[string]SeasonStatRecord) []SeasonStatRecor
 	}
 
 	return ordered
+}
+
+func seasonYears(records map[string]SeasonStatRecord) []int {
+	years := make([]int, 0, len(records))
+	for _, record := range records {
+		years = append(years, record.Year)
+	}
+	return years
 }
 
 // seasonKey matches the uniqueness rule used by the season_stats table.
