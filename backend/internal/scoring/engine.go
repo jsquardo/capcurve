@@ -73,8 +73,8 @@ func ScoreSeasonStats(stats []models.SeasonStat) map[uint]Breakdown {
 }
 
 func scoreYear(stats []models.SeasonStat, scores map[uint]Breakdown) {
-	hitterCohort := filterStats(stats, isHitterSeason)
-	pitcherCohort := filterStats(stats, isPitcherSeason)
+	hitterCohort := filterStats(stats, isEligibleHitterPercentileSeason)
+	pitcherCohort := filterStats(stats, isEligiblePitcherPercentileSeason)
 
 	for _, stat := range stats {
 		breakdown := Breakdown{}
@@ -224,6 +224,14 @@ func isHitterSeason(stat models.SeasonStat) bool {
 
 func isPitcherSeason(stat models.SeasonStat) bool {
 	return stat.InningsPitched > 0 || stat.GamesStarted > 0
+}
+
+func isEligibleHitterPercentileSeason(stat models.SeasonStat) bool {
+	return float64(stat.PlateAppearances) >= hitterThreshold
+}
+
+func isEligiblePitcherPercentileSeason(stat models.SeasonStat) bool {
+	return stat.InningsPitched >= pitcherThreshold
 }
 
 func sampleDampener(sample float64, threshold float64) float64 {

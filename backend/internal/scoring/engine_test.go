@@ -66,6 +66,34 @@ func TestSampleDampenerPenalizesTinySamples(t *testing.T) {
 	require.Less(t, scores[1].FinalScore, scores[2].FinalScore)
 }
 
+func TestHitterPercentileCohortExcludesTinySamples(t *testing.T) {
+	stats := []models.SeasonStat{
+		newHitterStat(1, 2024, 90, 0.410, 0.520, 0.780, 10, 28, 5, 0.390),
+		newHitterStat(2, 2024, 610, 0.315, 0.405, 0.615, 38, 112, 11, 0.325),
+		newHitterStat(3, 2024, 590, 0.275, 0.345, 0.470, 18, 74, 7, 0.295),
+	}
+
+	scores := ScoreSeasonStats(stats)
+
+	require.Equal(t, 100.0, scores[2].HitterScore)
+	require.Equal(t, 0.0, scores[3].HitterScore)
+	require.Greater(t, scores[1].HitterScore, 0.0)
+}
+
+func TestPitcherPercentileCohortExcludesTinySamples(t *testing.T) {
+	stats := []models.SeasonStat{
+		newPitcherStat(1, 2024, 24, 1.10, 0.82, 13.4, 1.4, 5.0, 0.3, 9.6, 71.0, nil),
+		newPitcherStat(2, 2024, 182, 2.95, 1.04, 10.9, 2.1, 6.4, 0.7, 5.2, 67.0, nil),
+		newPitcherStat(3, 2024, 168, 4.05, 1.27, 8.4, 3.3, 8.1, 1.1, 2.6, 62.0, nil),
+	}
+
+	scores := ScoreSeasonStats(stats)
+
+	require.Equal(t, 100.0, scores[2].PitcherScore)
+	require.Equal(t, 0.0, scores[3].PitcherScore)
+	require.Greater(t, scores[1].PitcherScore, 0.0)
+}
+
 func TestPartialSavantCoverageOnlyUsesAvailableMetrics(t *testing.T) {
 	expectedWOBAHigh := 0.420
 	hardHitHigh := 55.0

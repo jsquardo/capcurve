@@ -53,3 +53,19 @@
 - Postgres verification now shows `298` active `season_stats` rows, `14` soft-deleted historical rows, and `0` active duplicate player-year rows
 - Canonical team metadata on merged traded seasons intentionally reflects the player's final real team split, not MLB's synthetic `TOT` row
 - Ran `GOCACHE=/tmp/capcurve-gocache go test ./internal/ingestion/...` and `make test` successfully
+
+## [2026-03-13] — Session Summary
+
+### Added
+- Added regression tests proving sub-threshold hitter and pitcher seasons are excluded from percentile cohorts while eligible full-season peers keep stable percentile anchors
+
+### Changed
+- Updated season scoring so hitter percentile cohorts now require at least `100` plate appearances and pitcher percentile cohorts require at least `30.0` innings pitched
+- Updated `AGENTS.md` Phase 1 scoring design guidance to record the percentile threshold policy as a permanent rule instead of a temporary Current State note
+
+### Fixed
+- Prevented tiny-sample seasons from distorting season-scoped percentile rankings used for `value_score`
+
+### Notes
+- Sub-threshold seasons still receive a dampened score; they no longer define the percentile baseline for fuller workloads
+- Ran `make test` successfully
