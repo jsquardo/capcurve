@@ -48,7 +48,9 @@ Phase 1 enrichment fields sourced from Savant:
 
 ## Merge Rules
 
-- Persist one `season_stats` row per `player + season + team`.
+- Persist one `season_stats` row per `player + season`.
 - Merge hitting and pitching splits into that row when both exist.
+- Merge traded per-team splits into one season row before persistence; the final real
+  team split remains the canonical `team_id` / `team_name` on the merged row.
 - Apply Savant enrichment after the MLB baseline merge.
 - Seasons without Savant coverage still persist normally from MLB data alone.

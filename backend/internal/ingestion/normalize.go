@@ -2,6 +2,7 @@ package ingestion
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -46,6 +47,7 @@ func NormalizeSeasonSplit(split MLBSeasonSplit, group string) (SeasonStatRecord,
 
 	switch group {
 	case "hitting":
+		record.HasHitting = true
 		record.Age = intFromMap(split.Stat, "age")
 		record.GamesPlayed = intFromMap(split.Stat, "gamesPlayed")
 		record.PlateAppearances = intFromMap(split.Stat, "plateAppearances")
@@ -65,6 +67,7 @@ func NormalizeSeasonSplit(split MLBSeasonSplit, group string) (SeasonStatRecord,
 		record.OPS = floatFromMap(split.Stat, "ops")
 		record.BABIP = floatFromMap(split.Stat, "babip")
 	case "pitching":
+		record.HasPitching = true
 		record.Age = intFromMap(split.Stat, "age")
 		record.GamesPlayed = intFromMap(split.Stat, "gamesPlayed")
 		record.GamesStarted = intFromMap(split.Stat, "gamesStarted")
@@ -90,8 +93,14 @@ func NormalizeSeasonSplit(split MLBSeasonSplit, group string) (SeasonStatRecord,
 	return record, nil
 }
 
+// IsAggregateSeasonSplit identifies MLB's synthetic "TOT" row so ingestion can
+// keep only real team splits in storage.
+func IsAggregateSeasonSplit(split MLBSeasonSplit) bool {
+	return split.Team.ID == 0
+}
+
 // MergeSeasonStats overlays hitting, pitching, and enrichment data into a single
-// row keyed by player, season, and team.
+// row keyed by player and season.
 func MergeSeasonStats(existing SeasonStatRecord, incoming SeasonStatRecord) SeasonStatRecord {
 	merged := existing
 
@@ -106,6 +115,12 @@ func MergeSeasonStats(existing SeasonStatRecord, incoming SeasonStatRecord) Seas
 	}
 	if merged.Age == 0 {
 		merged.Age = incoming.Age
+	}
+	if incoming.HasHitting {
+		merged.HasHitting = true
+	}
+	if incoming.HasPitching {
+		merged.HasPitching = true
 	}
 
 	mergeInt := func(current *int, next int) {
@@ -167,6 +182,153 @@ func MergeSeasonStats(existing SeasonStatRecord, incoming SeasonStatRecord) Seas
 	mergeOptional(&merged.SweetSpotPct, incoming.SweetSpotPct)
 
 	return merged
+}
+
+// MergeSeasonGroup combines multiple team splits from the same stat group into
+// one season-level row. When a player is traded mid-season, the latest real-team
+// split becomes the canonical team reference for the merged season.
+func MergeSeasonGroup(existing SeasonStatRecord, incoming SeasonStatRecord, group string) SeasonStatRecord {
+	if existing.Year == 0 {
+		return incoming
+	}
+
+	switch group {
+	case "hitting":
+		if !existing.HasHitting {
+			return MergeSeasonStats(existing, incoming)
+		}
+		return mergeHittingSeason(existing, incoming)
+	case "pitching":
+		if !existing.HasPitching {
+			return MergeSeasonStats(existing, incoming)
+		}
+		return mergePitchingSeason(existing, incoming)
+	default:
+		return MergeSeasonStats(existing, incoming)
+	}
+}
+
+func mergeHittingSeason(existing SeasonStatRecord, incoming SeasonStatRecord) SeasonStatRecord {
+	merged := existing
+	mergeSeasonIdentity(&merged, incoming)
+	merged.HasHitting = true
+	merged.GamesPlayed += incoming.GamesPlayed
+	merged.PlateAppearances += incoming.PlateAppearances
+	merged.AtBats += incoming.AtBats
+	merged.Hits += incoming.Hits
+	merged.Doubles += incoming.Doubles
+	merged.Triples += incoming.Triples
+	merged.HomeRuns += incoming.HomeRuns
+	merged.Runs += incoming.Runs
+	merged.RBI += incoming.RBI
+	merged.Walks += incoming.Walks
+	merged.Strikeouts += incoming.Strikeouts
+	merged.StolenBases += incoming.StolenBases
+	recomputeHittingRates(&merged)
+
+	return merged
+}
+
+func mergePitchingSeason(existing SeasonStatRecord, incoming SeasonStatRecord) SeasonStatRecord {
+	merged := existing
+	combinedEarnedRuns := earnedRuns(existing) + earnedRuns(incoming)
+	combinedStrikePct := weightedAverage(existing.StrikePercentage, pitchingWeight(existing), incoming.StrikePercentage, pitchingWeight(incoming))
+	mergeSeasonIdentity(&merged, incoming)
+	merged.HasPitching = true
+	merged.GamesPlayed += incoming.GamesPlayed
+	merged.GamesStarted += incoming.GamesStarted
+	merged.Wins += incoming.Wins
+	merged.Losses += incoming.Losses
+	merged.InningsPitched += incoming.InningsPitched
+	merged.HitsAllowed += incoming.HitsAllowed
+	merged.WalksAllowed += incoming.WalksAllowed
+	merged.HomeRunsAllowed += incoming.HomeRunsAllowed
+	merged.Strikeouts += incoming.Strikeouts
+	recomputePitchingRates(&merged, combinedEarnedRuns, combinedStrikePct)
+
+	return merged
+}
+
+func mergeSeasonIdentity(current *SeasonStatRecord, incoming SeasonStatRecord) {
+	if incoming.TeamID != 0 && incoming.TeamID != current.TeamID {
+		current.TeamID = incoming.TeamID
+		current.TeamName = incoming.TeamName
+	}
+	if current.TeamName == "" {
+		current.TeamName = incoming.TeamName
+	}
+	if incoming.Age > current.Age {
+		current.Age = incoming.Age
+	}
+}
+
+func recomputeHittingRates(record *SeasonStatRecord) {
+	if record.AtBats > 0 {
+		record.BattingAvg = roundRate(float64(record.Hits) / float64(record.AtBats))
+		record.SLG = roundRate(float64(totalBases(*record)) / float64(record.AtBats))
+	}
+
+	obpDenominator := record.AtBats + record.Walks
+	if obpDenominator > 0 {
+		record.OBP = roundRate(float64(record.Hits+record.Walks) / float64(obpDenominator))
+	}
+
+	ballsInPlay := record.AtBats - record.Strikeouts - record.HomeRuns
+	if ballsInPlay > 0 {
+		record.BABIP = roundRate(float64(record.Hits-record.HomeRuns) / float64(ballsInPlay))
+	}
+
+	if record.OBP > 0 || record.SLG > 0 {
+		record.OPS = roundRate(record.OBP + record.SLG)
+	}
+}
+
+func recomputePitchingRates(record *SeasonStatRecord, combinedEarnedRuns float64, combinedStrikePct float64) {
+	if record.InningsPitched <= 0 {
+		return
+	}
+
+	record.ERA = roundRate((combinedEarnedRuns / record.InningsPitched) * 9)
+	record.WHIP = roundRate(float64(record.HitsAllowed+record.WalksAllowed) / record.InningsPitched)
+	record.StrikeoutsPer9 = roundRate(float64(record.Strikeouts) * 9 / record.InningsPitched)
+	record.WalksPer9 = roundRate(float64(record.WalksAllowed) * 9 / record.InningsPitched)
+	record.HitsPer9 = roundRate(float64(record.HitsAllowed) * 9 / record.InningsPitched)
+	record.HomeRunsPer9 = roundRate(float64(record.HomeRunsAllowed) * 9 / record.InningsPitched)
+	if record.WalksAllowed > 0 {
+		record.StrikeoutWalkRatio = roundRate(float64(record.Strikeouts) / float64(record.WalksAllowed))
+	}
+	record.StrikePercentage = roundRate(combinedStrikePct)
+}
+
+func pitchingWeight(record SeasonStatRecord) float64 {
+	if record.InningsPitched > 0 {
+		return record.InningsPitched
+	}
+	return float64(record.GamesPlayed)
+}
+
+func earnedRuns(record SeasonStatRecord) float64 {
+	if record.InningsPitched <= 0 || record.ERA <= 0 {
+		return 0
+	}
+	return (record.ERA * record.InningsPitched) / 9
+}
+
+func weightedAverage(left float64, leftWeight float64, right float64, rightWeight float64) float64 {
+	totalWeight := leftWeight + rightWeight
+	if totalWeight == 0 {
+		return 0
+	}
+	return ((left * leftWeight) + (right * rightWeight)) / totalWeight
+}
+
+func totalBases(record SeasonStatRecord) int {
+	singles := record.Hits - record.Doubles - record.Triples - record.HomeRuns
+	return singles + (record.Doubles * 2) + (record.Triples * 3) + (record.HomeRuns * 4)
+}
+
+func roundRate(value float64) float64 {
+	return math.Round(value*1000) / 1000
 }
 
 // ApplySavantEnrichment attaches optional Statcast-derived fields after the MLB

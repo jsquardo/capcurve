@@ -90,7 +90,15 @@ func (s *Service) SyncPlayer(ctx context.Context, playerID int) (*models.Player,
 			return err
 		}
 
+		if err := tx.Where("player_id = ? AND team_id = 0", player.ID).Delete(&models.SeasonStat{}).Error; err != nil {
+			return err
+		}
+
 		for _, record := range orderedSeasonRecords(seasonRecords) {
+			if err := tx.Where("player_id = ? AND year = ? AND team_id <> ?", player.ID, record.Year, record.TeamID).Delete(&models.SeasonStat{}).Error; err != nil {
+				return err
+			}
+
 			season := modelFromSeasonRecord(player.ID, record)
 			if err := tx.Clauses(clause.OnConflict{
 				Columns: []clause.Column{
@@ -164,13 +172,17 @@ func (s *Service) SyncPlayer(ctx context.Context, playerID int) (*models.Player,
 // mergeSplits folds one MLB stat group into the in-memory season map before persistence.
 func (s *Service) mergeSplits(records map[string]SeasonStatRecord, splits []MLBSeasonSplit, group string) error {
 	for _, split := range splits {
+		if IsAggregateSeasonSplit(split) {
+			continue
+		}
+
 		record, err := NormalizeSeasonSplit(split, group)
 		if err != nil {
 			return err
 		}
 
-		key := seasonKey(record.Year, record.TeamID)
-		records[key] = MergeSeasonStats(records[key], record)
+		key := seasonKey(record.Year)
+		records[key] = MergeSeasonGroup(records[key], record, group)
 	}
 
 	return nil
@@ -229,8 +241,8 @@ func seasonYears(records map[string]SeasonStatRecord) []int {
 }
 
 // seasonKey matches the uniqueness rule used by the season_stats table.
-func seasonKey(year int, teamID int) string {
-	return fmt.Sprintf("%d:%d", year, teamID)
+func seasonKey(year int) string {
+	return fmt.Sprintf("%d", year)
 }
 
 // modelFromSeasonRecord converts the normalized ingestion shape into the GORM model.

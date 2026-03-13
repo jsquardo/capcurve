@@ -44,6 +44,7 @@ func TestMergeSeasonStats(t *testing.T) {
 		Year:             2021,
 		TeamID:           108,
 		TeamName:         "Los Angeles Angels",
+		HasHitting:       true,
 		GamesPlayed:      158,
 		PlateAppearances: 639,
 		HomeRuns:         46,
@@ -54,6 +55,7 @@ func TestMergeSeasonStats(t *testing.T) {
 		Year:               2021,
 		TeamID:             108,
 		TeamName:           "Los Angeles Angels",
+		HasPitching:        true,
 		GamesStarted:       23,
 		InningsPitched:     130.1,
 		ERA:                3.18,
@@ -71,6 +73,9 @@ func TestMergeSeasonStats(t *testing.T) {
 	}
 	if merged.InningsPitched != 130.1 {
 		t.Fatalf("InningsPitched = %v, want 130.1", merged.InningsPitched)
+	}
+	if !merged.HasHitting || !merged.HasPitching {
+		t.Fatalf("expected merged record to retain both role flags: %+v", merged)
 	}
 }
 
@@ -106,5 +111,165 @@ func TestNormalizeSeasonSplit(t *testing.T) {
 	}
 	if record.BABIP != 0.336 {
 		t.Fatalf("BABIP = %v, want 0.336", record.BABIP)
+	}
+}
+
+func TestIsAggregateSeasonSplit(t *testing.T) {
+	t.Parallel()
+
+	if !IsAggregateSeasonSplit(MLBSeasonSplit{
+		Season: "2022",
+		Team: mlbStatTeam{
+			ID:   0,
+			Name: "TOT",
+		},
+	}) {
+		t.Fatal("expected team_id 0 split to be treated as aggregate")
+	}
+
+	if IsAggregateSeasonSplit(MLBSeasonSplit{
+		Season: "2022",
+		Team: mlbStatTeam{
+			ID:   120,
+			Name: "Washington Nationals",
+		},
+	}) {
+		t.Fatal("expected real team split to be retained")
+	}
+}
+
+func TestMergeSplitsSkipsAggregateRows(t *testing.T) {
+	t.Parallel()
+
+	service := &Service{}
+	records := make(map[string]SeasonStatRecord)
+	splits := []MLBSeasonSplit{
+		{
+			Season: "2022",
+			Stat: map[string]any{
+				"plateAppearances": float64(52),
+				"homeRuns":         float64(6),
+			},
+			Team: mlbStatTeam{
+				ID:   120,
+				Name: "Washington Nationals",
+			},
+		},
+		{
+			Season: "2022",
+			Stat: map[string]any{
+				"plateAppearances": float64(427),
+				"homeRuns":         float64(21),
+			},
+			Team: mlbStatTeam{
+				ID:   109,
+				Name: "San Diego Padres",
+			},
+		},
+		{
+			Season: "2022",
+			Stat: map[string]any{
+				"plateAppearances": float64(479),
+				"homeRuns":         float64(27),
+			},
+			Team: mlbStatTeam{
+				ID:   0,
+				Name: "TOT",
+			},
+		},
+	}
+
+	if err := service.mergeSplits(records, splits, "hitting"); err != nil {
+		t.Fatalf("mergeSplits returned error: %v", err)
+	}
+
+	if len(records) != 1 {
+		t.Fatalf("expected 1 merged season record, got %d", len(records))
+	}
+
+	record, ok := records[seasonKey(2022)]
+	if !ok {
+		t.Fatalf("expected merged 2022 season record, got keys: %+v", records)
+	}
+	if _, ok := records["2022:0"]; ok {
+		t.Fatal("aggregate team_id 0 row should not be present")
+	}
+	if record.TeamID != 109 || record.TeamName != "San Diego Padres" {
+		t.Fatalf("expected canonical team metadata to reflect final split, got team_id=%d team_name=%q", record.TeamID, record.TeamName)
+	}
+	if record.PlateAppearances != 479 {
+		t.Fatalf("PlateAppearances = %d, want 479", record.PlateAppearances)
+	}
+	if record.HomeRuns != 27 {
+		t.Fatalf("HomeRuns = %d, want 27", record.HomeRuns)
+	}
+}
+
+func TestMergeSeasonGroupAggregatesPitchingRatesAcrossTeams(t *testing.T) {
+	t.Parallel()
+
+	first := SeasonStatRecord{
+		Year:               2017,
+		TeamID:             117,
+		TeamName:           "Detroit Tigers",
+		HasPitching:        true,
+		GamesPlayed:        28,
+		GamesStarted:       28,
+		Wins:               10,
+		Losses:             8,
+		InningsPitched:     172.0,
+		HitsAllowed:        138,
+		WalksAllowed:       42,
+		HomeRunsAllowed:    21,
+		Strikeouts:         176,
+		ERA:                3.82,
+		WHIP:               1.047,
+		StrikeoutsPer9:     9.209,
+		WalksPer9:          2.198,
+		HitsPer9:           7.221,
+		HomeRunsPer9:       1.099,
+		StrikeoutWalkRatio: 4.19,
+		StrikePercentage:   0.668,
+	}
+	second := SeasonStatRecord{
+		Year:               2017,
+		TeamID:             146,
+		TeamName:           "Houston Astros",
+		HasPitching:        true,
+		GamesPlayed:        5,
+		GamesStarted:       5,
+		Wins:               5,
+		Losses:             0,
+		InningsPitched:     34.0,
+		HitsAllowed:        26,
+		WalksAllowed:       5,
+		HomeRunsAllowed:    2,
+		Strikeouts:         43,
+		ERA:                1.06,
+		WHIP:               0.912,
+		StrikeoutsPer9:     11.382,
+		WalksPer9:          1.324,
+		HitsPer9:           6.882,
+		HomeRunsPer9:       0.529,
+		StrikeoutWalkRatio: 8.6,
+		StrikePercentage:   0.69,
+	}
+
+	merged := MergeSeasonGroup(first, second, "pitching")
+
+	if merged.TeamID != 146 || merged.TeamName != "Houston Astros" {
+		t.Fatalf("expected final team metadata, got team_id=%d team_name=%q", merged.TeamID, merged.TeamName)
+	}
+	if merged.InningsPitched != 206 {
+		t.Fatalf("InningsPitched = %v, want 206", merged.InningsPitched)
+	}
+	if merged.ERA != 3.364 {
+		t.Fatalf("ERA = %v, want 3.364", merged.ERA)
+	}
+	if merged.WHIP != 1.024 {
+		t.Fatalf("WHIP = %v, want 1.024", merged.WHIP)
+	}
+	if merged.StrikeoutsPer9 != 9.568 {
+		t.Fatalf("StrikeoutsPer9 = %v, want 9.568", merged.StrikeoutsPer9)
 	}
 }

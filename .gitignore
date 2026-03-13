@@ -24,3 +24,6 @@ Thumbs.db
 
 app-structure.md
 AGENTS.md
+.agents/
+.claude/
+REVIEWER.md

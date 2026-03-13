@@ -15,10 +15,12 @@ type PlayerRecord struct {
 }
 
 type SeasonStatRecord struct {
-	Year     int
-	TeamID   int
-	TeamName string
-	Age      int
+	Year        int
+	TeamID      int
+	TeamName    string
+	Age         int
+	HasHitting  bool
+	HasPitching bool
 
 	GamesPlayed      int
 	GamesStarted     int
