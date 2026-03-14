@@ -1,3 +1,20 @@
+## [2026-03-14] — Session Summary
+
+### Added
+- Added regression tests for baseball-notation innings parsing, pitching split normalization into outs, and partial-inning traded-season merges
+
+### Changed
+- Updated ingestion normalization to convert MLB innings strings like `130.1` and `130.2` into integer outs before any merge or scoring math
+- Updated merged pitching-season recomputation to use outs-based innings internally while still persisting `innings_pitched` in MLB-style baseball notation for schema compatibility
+- Updated `AGENTS.md` Current State to mark the innings-pitched blocker complete and leave the schema-enforcement migration as the next Phase 1 task
+
+### Fixed
+- Corrected partial-inning aggregation so merged pitching rates no longer treat baseball notation tenths as decimal fractions
+
+### Notes
+- Internal ingestion records now keep `InningsPitchedOuts` as the authoritative pitching-workload value; the existing model/schema field remains unchanged for now
+- Ran `make test` successfully
+
 ## [2026-03-11] — Session Summary
 
 ### Added

@@ -3,6 +3,7 @@ package ingestion
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"time"
 )
 
@@ -75,7 +76,12 @@ func NormalizeSeasonSplit(split MLBSeasonSplit, group string) (SeasonStatRecord,
 		record.Losses = intFromMap(split.Stat, "losses")
 		record.ERA = floatFromMap(split.Stat, "era")
 		record.WHIP = floatFromMap(split.Stat, "whip")
-		record.InningsPitched = floatFromMap(split.Stat, "inningsPitched")
+		inningsOuts, err := baseballInningsOutsFromMap(split.Stat, "inningsPitched")
+		if err != nil {
+			return SeasonStatRecord{}, err
+		}
+		record.InningsPitchedOuts = inningsOuts
+		record.InningsPitched = baseballInningsFromOuts(inningsOuts)
 		record.HitsAllowed = intFromMap(split.Stat, "hits")
 		record.WalksAllowed = intFromMap(split.Stat, "baseOnBalls")
 		record.HomeRunsAllowed = intFromMap(split.Stat, "homeRuns")
@@ -161,7 +167,10 @@ func MergeSeasonStats(existing SeasonStatRecord, incoming SeasonStatRecord) Seas
 	mergeInt(&merged.Losses, incoming.Losses)
 	mergeFloat(&merged.ERA, incoming.ERA)
 	mergeFloat(&merged.WHIP, incoming.WHIP)
-	mergeFloat(&merged.InningsPitched, incoming.InningsPitched)
+	if incoming.InningsPitchedOuts != 0 {
+		merged.InningsPitchedOuts = incoming.InningsPitchedOuts
+		merged.InningsPitched = baseballInningsFromOuts(merged.InningsPitchedOuts)
+	}
 	mergeInt(&merged.HitsAllowed, incoming.HitsAllowed)
 	mergeInt(&merged.WalksAllowed, incoming.WalksAllowed)
 	mergeInt(&merged.HomeRunsAllowed, incoming.HomeRunsAllowed)
@@ -239,7 +248,8 @@ func mergePitchingSeason(existing SeasonStatRecord, incoming SeasonStatRecord) S
 	merged.GamesStarted += incoming.GamesStarted
 	merged.Wins += incoming.Wins
 	merged.Losses += incoming.Losses
-	merged.InningsPitched += incoming.InningsPitched
+	merged.InningsPitchedOuts += incoming.InningsPitchedOuts
+	merged.InningsPitched = baseballInningsFromOuts(merged.InningsPitchedOuts)
 	merged.HitsAllowed += incoming.HitsAllowed
 	merged.WalksAllowed += incoming.WalksAllowed
 	merged.HomeRunsAllowed += incoming.HomeRunsAllowed
@@ -284,16 +294,18 @@ func recomputeHittingRates(record *SeasonStatRecord) {
 }
 
 func recomputePitchingRates(record *SeasonStatRecord, combinedEarnedRuns float64, combinedStrikePct float64) {
-	if record.InningsPitched <= 0 {
+	innings := inningsFromOuts(record.InningsPitchedOuts)
+	if innings <= 0 {
 		return
 	}
 
-	record.ERA = roundRate((combinedEarnedRuns / record.InningsPitched) * 9)
-	record.WHIP = roundRate(float64(record.HitsAllowed+record.WalksAllowed) / record.InningsPitched)
-	record.StrikeoutsPer9 = roundRate(float64(record.Strikeouts) * 9 / record.InningsPitched)
-	record.WalksPer9 = roundRate(float64(record.WalksAllowed) * 9 / record.InningsPitched)
-	record.HitsPer9 = roundRate(float64(record.HitsAllowed) * 9 / record.InningsPitched)
-	record.HomeRunsPer9 = roundRate(float64(record.HomeRunsAllowed) * 9 / record.InningsPitched)
+	record.InningsPitched = baseballInningsFromOuts(record.InningsPitchedOuts)
+	record.ERA = roundRate((combinedEarnedRuns / innings) * 9)
+	record.WHIP = roundRate(float64(record.HitsAllowed+record.WalksAllowed) / innings)
+	record.StrikeoutsPer9 = roundRate(float64(record.Strikeouts) * 9 / innings)
+	record.WalksPer9 = roundRate(float64(record.WalksAllowed) * 9 / innings)
+	record.HitsPer9 = roundRate(float64(record.HitsAllowed) * 9 / innings)
+	record.HomeRunsPer9 = roundRate(float64(record.HomeRunsAllowed) * 9 / innings)
 	if record.WalksAllowed > 0 {
 		record.StrikeoutWalkRatio = roundRate(float64(record.Strikeouts) / float64(record.WalksAllowed))
 	}
@@ -301,17 +313,18 @@ func recomputePitchingRates(record *SeasonStatRecord, combinedEarnedRuns float64
 }
 
 func pitchingWeight(record SeasonStatRecord) float64 {
-	if record.InningsPitched > 0 {
-		return record.InningsPitched
+	if record.InningsPitchedOuts > 0 {
+		return float64(record.InningsPitchedOuts)
 	}
 	return float64(record.GamesPlayed)
 }
 
 func earnedRuns(record SeasonStatRecord) float64 {
-	if record.InningsPitched <= 0 || record.ERA <= 0 {
+	innings := inningsFromOuts(record.InningsPitchedOuts)
+	if innings <= 0 || record.ERA <= 0 {
 		return 0
 	}
-	return (record.ERA * record.InningsPitched) / 9
+	return (record.ERA * innings) / 9
 }
 
 func weightedAverage(left float64, leftWeight float64, right float64, rightWeight float64) float64 {
@@ -383,4 +396,28 @@ func floatFromMap(values map[string]any, key string) float64 {
 	default:
 		return 0
 	}
+}
+
+func baseballInningsOutsFromMap(values map[string]any, key string) (int, error) {
+	raw, ok := values[key]
+	if !ok || raw == nil {
+		return 0, nil
+	}
+
+	switch value := raw.(type) {
+	case float64:
+		return parseBaseballInnings(strconv.FormatFloat(value, 'f', -1, 64))
+	case string:
+		return parseBaseballInnings(value)
+	default:
+		return 0, nil
+	}
+}
+
+func inningsFromOuts(outs int) float64 {
+	if outs <= 0 {
+		return 0
+	}
+
+	return float64(outs) / 3
 }

@@ -58,6 +58,7 @@ func TestMergeSeasonStats(t *testing.T) {
 		HasPitching:        true,
 		GamesStarted:       23,
 		InningsPitched:     130.1,
+		InningsPitchedOuts: 391,
 		ERA:                3.18,
 		StrikeoutsPer9:     10.77,
 		StrikeoutWalkRatio: 3.55,
@@ -111,6 +112,34 @@ func TestNormalizeSeasonSplit(t *testing.T) {
 	}
 	if record.BABIP != 0.336 {
 		t.Fatalf("BABIP = %v, want 0.336", record.BABIP)
+	}
+}
+
+func TestNormalizeSeasonSplitPitchingConvertsBaseballInningsToOuts(t *testing.T) {
+	t.Parallel()
+
+	split := MLBSeasonSplit{
+		Season: "2024",
+		Stat: map[string]any{
+			"inningsPitched": "130.2",
+			"era":            "3.47",
+		},
+		Team: mlbStatTeam{
+			ID:   119,
+			Name: "Los Angeles Dodgers",
+		},
+	}
+
+	record, err := NormalizeSeasonSplit(split, "pitching")
+	if err != nil {
+		t.Fatalf("NormalizeSeasonSplit returned error: %v", err)
+	}
+
+	if record.InningsPitchedOuts != 392 {
+		t.Fatalf("InningsPitchedOuts = %d, want 392", record.InningsPitchedOuts)
+	}
+	if record.InningsPitched != 130.2 {
+		t.Fatalf("InningsPitched = %v, want 130.2", record.InningsPitched)
 	}
 }
 
@@ -218,6 +247,7 @@ func TestMergeSeasonGroupAggregatesPitchingRatesAcrossTeams(t *testing.T) {
 		Wins:               10,
 		Losses:             8,
 		InningsPitched:     172.0,
+		InningsPitchedOuts: 516,
 		HitsAllowed:        138,
 		WalksAllowed:       42,
 		HomeRunsAllowed:    21,
@@ -241,6 +271,7 @@ func TestMergeSeasonGroupAggregatesPitchingRatesAcrossTeams(t *testing.T) {
 		Wins:               5,
 		Losses:             0,
 		InningsPitched:     34.0,
+		InningsPitchedOuts: 102,
 		HitsAllowed:        26,
 		WalksAllowed:       5,
 		HomeRunsAllowed:    2,
@@ -263,6 +294,9 @@ func TestMergeSeasonGroupAggregatesPitchingRatesAcrossTeams(t *testing.T) {
 	if merged.InningsPitched != 206 {
 		t.Fatalf("InningsPitched = %v, want 206", merged.InningsPitched)
 	}
+	if merged.InningsPitchedOuts != 618 {
+		t.Fatalf("InningsPitchedOuts = %d, want 618", merged.InningsPitchedOuts)
+	}
 	if merged.ERA != 3.364 {
 		t.Fatalf("ERA = %v, want 3.364", merged.ERA)
 	}
@@ -271,5 +305,54 @@ func TestMergeSeasonGroupAggregatesPitchingRatesAcrossTeams(t *testing.T) {
 	}
 	if merged.StrikeoutsPer9 != 9.568 {
 		t.Fatalf("StrikeoutsPer9 = %v, want 9.568", merged.StrikeoutsPer9)
+	}
+}
+
+func TestMergeSeasonGroupAggregatesBaseballPartialInningsAcrossTeams(t *testing.T) {
+	t.Parallel()
+
+	first := SeasonStatRecord{
+		Year:               2025,
+		TeamID:             111,
+		TeamName:           "Boston Red Sox",
+		HasPitching:        true,
+		GamesPlayed:        10,
+		GamesStarted:       10,
+		InningsPitched:     10.1,
+		InningsPitchedOuts: 31,
+		HitsAllowed:        10,
+		WalksAllowed:       3,
+		HomeRunsAllowed:    1,
+		Strikeouts:         15,
+		ERA:                2.613,
+		StrikePercentage:   0.64,
+	}
+	second := SeasonStatRecord{
+		Year:               2025,
+		TeamID:             112,
+		TeamName:           "Chicago Cubs",
+		HasPitching:        true,
+		GamesPlayed:        4,
+		GamesStarted:       4,
+		InningsPitched:     2.2,
+		InningsPitchedOuts: 8,
+		HitsAllowed:        4,
+		WalksAllowed:       1,
+		HomeRunsAllowed:    0,
+		Strikeouts:         5,
+		ERA:                3.375,
+		StrikePercentage:   0.61,
+	}
+
+	merged := MergeSeasonGroup(first, second, "pitching")
+
+	if merged.InningsPitchedOuts != 39 {
+		t.Fatalf("InningsPitchedOuts = %d, want 39", merged.InningsPitchedOuts)
+	}
+	if merged.InningsPitched != 13 {
+		t.Fatalf("InningsPitched = %v, want 13", merged.InningsPitched)
+	}
+	if merged.ERA != 2.769 {
+		t.Fatalf("ERA = %v, want 2.769", merged.ERA)
 	}
 }

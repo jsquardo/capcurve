@@ -46,6 +46,7 @@ type SeasonStatRecord struct {
 	ERA                float64
 	WHIP               float64
 	InningsPitched     float64
+	InningsPitchedOuts int
 	HitsAllowed        int
 	WalksAllowed       int
 	HomeRunsAllowed    int
