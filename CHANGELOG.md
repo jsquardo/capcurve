@@ -86,3 +86,19 @@
 ### Notes
 - Sub-threshold seasons still receive a dampened score; they no longer define the percentile baseline for fuller workloads
 - Ran `make test` successfully
+
+## [2026-03-15] — Session Summary
+
+### Added
+- Added regression tests covering baseball-notation innings conversion inside scoring, partial-inning pitcher dampening, and two-way final-score weighting
+
+### Changed
+- Updated scoring workload math to convert persisted MLB baseball-notation innings into true outs-based innings before applying pitcher thresholds, dampeners, and two-way role weighting
+- Updated `AGENTS.md` Current State to mark the innings-pitched scoring blocker complete and set the active `season_stats` uniqueness migration as the next task
+
+### Fixed
+- Corrected scoring-side workload handling so seasons like `29.2` innings are no longer underweighted as decimal tenths during `value_score` calculation
+
+### Notes
+- Persisted `season_stats.innings_pitched` still remains in MLB baseball notation for schema compatibility; scoring now normalizes it back to true innings internally
+- Ran `make test` successfully

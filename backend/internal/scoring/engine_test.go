@@ -94,6 +94,26 @@ func TestPitcherPercentileCohortExcludesTinySamples(t *testing.T) {
 	require.Greater(t, scores[1].PitcherScore, 0.0)
 }
 
+func TestTrueInningsFromBaseballNotation(t *testing.T) {
+	require.InDelta(t, 29.6666667, trueInningsFromBaseballNotation(29.2), 0.000001)
+	require.InDelta(t, 10.3333333, trueInningsFromBaseballNotation(10.1), 0.000001)
+	require.Equal(t, 0.0, trueInningsFromBaseballNotation(0))
+	require.Equal(t, 10.4, trueInningsFromBaseballNotation(10.4))
+}
+
+func TestPitcherScoreUsesOutsBasedWorkloadDampener(t *testing.T) {
+	stats := []models.SeasonStat{
+		newPitcherStat(1, 2024, 29.2, 3.20, 1.08, 10.0, 2.4, 6.7, 0.8, 4.2, 67.0, nil),
+		newPitcherStat(2, 2024, 29.0, 3.20, 1.08, 10.0, 2.4, 6.7, 0.8, 4.2, 67.0, nil),
+		newPitcherStat(3, 2024, 180, 3.20, 1.08, 10.0, 2.4, 6.7, 0.8, 4.2, 67.0, nil),
+	}
+
+	scores := ScoreSeasonStats(stats)
+
+	require.Equal(t, 49.44, scores[1].PitcherScore)
+	require.Equal(t, 48.33, scores[2].PitcherScore)
+}
+
 func TestPartialSavantCoverageOnlyUsesAvailableMetrics(t *testing.T) {
 	expectedWOBAHigh := 0.420
 	hardHitHigh := 55.0
@@ -245,6 +265,21 @@ func TestTwoWayBlendLetsEligibleSideDominate(t *testing.T) {
 
 	require.Greater(t, twoWay.HitterScore, 0.0)
 	require.Greater(t, math.Abs(twoWay.FinalScore-twoWay.PitcherScore), math.Abs(twoWay.FinalScore-twoWay.HitterScore))
+}
+
+func TestTwoWayBlendUsesOutsBasedPitchingWorkload(t *testing.T) {
+	stat := models.SeasonStat{
+		PlateAppearances: 100,
+		InningsPitched:   29.2,
+		GamesStarted:     6,
+	}
+
+	score := finalScore(stat, Breakdown{
+		HitterScore:  80,
+		PitcherScore: 20,
+	})
+
+	require.Equal(t, 60.15, score)
 }
 
 func newHitterStat(id uint, year int, pa int, avg float64, obp float64, slg float64, homeRuns int, rbi int, steals int, babip float64) models.SeasonStat {
