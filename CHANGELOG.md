@@ -1,6 +1,23 @@
 ## [2026-03-15] — Session Summary
 
 ### Added
+- Added migration `000004_enforce_active_season_stat_uniqueness` to enforce one active `season_stats` row per `player_id + year` with a partial unique index on non-deleted rows
+- Added unit coverage proving the ingestion upsert targets active `player_id + year` conflicts and keeps the expected mutable season columns
+
+### Changed
+- Updated ingestion upserts to target the new active-row partial unique index instead of the old `player_id + year + team_id` uniqueness rule
+- Updated ingestion conflict updates so `team_id` can change when a re-ingested traded season ends with a different canonical final-team split
+
+### Fixed
+- Prevented soft-deleted `season_stats` tombstones from blocking re-ingestion under the new one-row-per-player-year rule
+
+### Notes
+- Applied the migration successfully in Docker, verified migration version `4`, and confirmed Postgres created `idx_season_stats_player_year_active_unique` with `WHERE deleted_at IS NULL`
+- Ran `make test` successfully
+
+## [2026-03-15] — Session Summary
+
+### Added
 - Added a regression test proving hitter base scoring ignores derived `OPS` changes when the non-derivative hitter inputs stay the same
 - Added a regression test proving higher `BarrelPct` and `HardHitPct` outrank a SweetSpot-only improvement when the rest of a hitter season is unchanged
 

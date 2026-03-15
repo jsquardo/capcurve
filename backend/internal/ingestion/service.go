@@ -19,6 +19,53 @@ type Service struct {
 	scorer       *scoring.Service
 }
 
+var seasonStatUpsertColumns = []string{
+	"team_id",
+	"team_name",
+	"age",
+	"games_played",
+	"games_started",
+	"plate_appearances",
+	"at_bats",
+	"hits",
+	"doubles",
+	"triples",
+	"home_runs",
+	"runs",
+	"rbi",
+	"walks",
+	"strikeouts",
+	"stolen_bases",
+	"batting_avg",
+	"obp",
+	"slg",
+	"ops",
+	"babip",
+	"wins",
+	"losses",
+	"era",
+	"whip",
+	"innings_pitched",
+	"hits_allowed",
+	"walks_allowed",
+	"home_runs_allowed",
+	"strikeouts_per_9",
+	"walks_per_9",
+	"hits_per_9",
+	"home_runs_per_9",
+	"strikeout_walk_ratio",
+	"strike_percentage",
+	"expected_batting_avg",
+	"expected_slugging",
+	"expected_woba",
+	"expected_era",
+	"barrel_pct",
+	"hard_hit_pct",
+	"avg_exit_velocity",
+	"avg_launch_angle",
+	"sweet_spot_pct",
+}
+
 // NewService wires the MLB fetcher, Savant fetcher, and database persistence into
 // one ingestion entry point.
 func NewService(db *gorm.DB, mlbClient *MLBClient, savantClient *SavantClient) *Service {
@@ -100,58 +147,7 @@ func (s *Service) SyncPlayer(ctx context.Context, playerID int) (*models.Player,
 			}
 
 			season := modelFromSeasonRecord(player.ID, record)
-			if err := tx.Clauses(clause.OnConflict{
-				Columns: []clause.Column{
-					{Name: "player_id"},
-					{Name: "year"},
-					{Name: "team_id"},
-				},
-				DoUpdates: clause.AssignmentColumns([]string{
-					"team_name",
-					"age",
-					"games_played",
-					"games_started",
-					"plate_appearances",
-					"at_bats",
-					"hits",
-					"doubles",
-					"triples",
-					"home_runs",
-					"runs",
-					"rbi",
-					"walks",
-					"strikeouts",
-					"stolen_bases",
-					"batting_avg",
-					"obp",
-					"slg",
-					"ops",
-					"babip",
-					"wins",
-					"losses",
-					"era",
-					"whip",
-					"innings_pitched",
-					"hits_allowed",
-					"walks_allowed",
-					"home_runs_allowed",
-					"strikeouts_per_9",
-					"walks_per_9",
-					"hits_per_9",
-					"home_runs_per_9",
-					"strikeout_walk_ratio",
-					"strike_percentage",
-					"expected_batting_avg",
-					"expected_slugging",
-					"expected_woba",
-					"expected_era",
-					"barrel_pct",
-					"hard_hit_pct",
-					"avg_exit_velocity",
-					"avg_launch_angle",
-					"sweet_spot_pct",
-				}),
-			}).Create(&season).Error; err != nil {
+			if err := tx.Clauses(seasonStatUpsertClause()).Create(&season).Error; err != nil {
 				return err
 			}
 		}
@@ -240,9 +236,24 @@ func seasonYears(records map[string]SeasonStatRecord) []int {
 	return years
 }
 
-// seasonKey matches the uniqueness rule used by the season_stats table.
+// seasonKey matches the active-row uniqueness rule used by season_stats.
 func seasonKey(year int) string {
 	return fmt.Sprintf("%d", year)
+}
+
+func seasonStatUpsertClause() clause.OnConflict {
+	return clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "player_id"},
+			{Name: "year"},
+		},
+		TargetWhere: clause.Where{
+			Exprs: []clause.Expression{
+				clause.Eq{Column: "deleted_at", Value: nil},
+			},
+		},
+		DoUpdates: clause.AssignmentColumns(seasonStatUpsertColumns),
+	}
 }
 
 // modelFromSeasonRecord converts the normalized ingestion shape into the GORM model.
