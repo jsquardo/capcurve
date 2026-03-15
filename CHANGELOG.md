@@ -2,10 +2,13 @@
 
 ### Added
 - Added a regression test proving hitter base scoring ignores derived `OPS` changes when the non-derivative hitter inputs stay the same
+- Added a regression test proving higher `BarrelPct` and `HardHitPct` outrank a SweetSpot-only improvement when the rest of a hitter season is unchanged
 
 ### Changed
 - Reweighted hitter base scoring to use `OBP 0.28`, `SLG 0.24`, `BattingAvg 0.08`, `HomeRuns 0.10`, `RBI 0.07`, `StolenBases 0.05`, and `BABIP 0.05`
+- Reweighted hitter Savant scoring to emphasize `BarrelPct` and `HardHitPct` above `SweetSpotPct` while keeping expected outcome metrics and exit velocity in the blend
 - Updated `AGENTS.md` Phase 1 scoring guidance to record the permanent hitter base-weight rule and note that WAR should eventually be added at `0.05`-`0.10` once the data model supports it
+- Updated `AGENTS.md` Phase 1 scoring guidance to record the permanent differentiated hitter Savant weights
 
 ### Fixed
 - Removed hitter-score double counting caused by scoring `OBP`, `SLG`, and derived `OPS` together

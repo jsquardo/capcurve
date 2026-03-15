@@ -35,13 +35,13 @@ var hitterMetricConfigs = []metricConfig{
 }
 
 var hitterSavantConfigs = []metricConfig{
-	{weight: 1, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.ExpectedWOBA) }},
-	{weight: 1, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.ExpectedBattingAvg) }},
-	{weight: 1, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.ExpectedSlugging) }},
-	{weight: 1, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.BarrelPct) }},
-	{weight: 1, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.HardHitPct) }},
-	{weight: 1, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.AvgExitVelocity) }},
-	{weight: 1, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.SweetSpotPct) }},
+	{weight: 1.20, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.ExpectedWOBA) }},
+	{weight: 0.80, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.ExpectedBattingAvg) }},
+	{weight: 1.00, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.ExpectedSlugging) }},
+	{weight: 1.40, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.BarrelPct) }},
+	{weight: 1.20, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.HardHitPct) }},
+	{weight: 0.90, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.AvgExitVelocity) }},
+	{weight: 0.60, value: func(stat models.SeasonStat) (float64, bool) { return optionalValue(stat.SweetSpotPct) }},
 }
 
 var pitcherMetricConfigs = []metricConfig{

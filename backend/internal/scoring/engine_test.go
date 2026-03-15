@@ -156,6 +156,71 @@ func TestPartialSavantCoverageOnlyUsesAvailableMetrics(t *testing.T) {
 	require.Greater(t, scores[1].HitterScore, scores[2].HitterScore)
 }
 
+func TestHitterSavantWeightsPrioritizeBarrelAndHardHitOverSweetSpot(t *testing.T) {
+	barrelHigh := 17.0
+	barrelLow := 8.0
+	hardHitHigh := 49.0
+	hardHitLow := 34.0
+	sweetSpotHigh := 41.0
+	sweetSpotLow := 27.0
+
+	stats := []models.SeasonStat{
+		{
+			Model:            gorm.Model{ID: 1},
+			Year:             2024,
+			PlateAppearances: 560,
+			BattingAvg:       0.295,
+			HomeRuns:         30,
+			RBI:              90,
+			StolenBases:      12,
+			OBP:              0.370,
+			SLG:              0.540,
+			OPS:              0.910,
+			BABIP:            0.305,
+			BarrelPct:        &barrelHigh,
+			HardHitPct:       &hardHitHigh,
+			SweetSpotPct:     &sweetSpotLow,
+		},
+		{
+			Model:            gorm.Model{ID: 2},
+			Year:             2024,
+			PlateAppearances: 560,
+			BattingAvg:       0.295,
+			HomeRuns:         30,
+			RBI:              90,
+			StolenBases:      12,
+			OBP:              0.370,
+			SLG:              0.540,
+			OPS:              0.910,
+			BABIP:            0.305,
+			BarrelPct:        &barrelLow,
+			HardHitPct:       &hardHitLow,
+			SweetSpotPct:     &sweetSpotHigh,
+		},
+		{
+			Model:            gorm.Model{ID: 3},
+			Year:             2024,
+			PlateAppearances: 560,
+			BattingAvg:       0.295,
+			HomeRuns:         30,
+			RBI:              90,
+			StolenBases:      12,
+			OBP:              0.370,
+			SLG:              0.540,
+			OPS:              0.910,
+			BABIP:            0.305,
+			BarrelPct:        &barrelLow,
+			HardHitPct:       &hardHitLow,
+			SweetSpotPct:     &sweetSpotLow,
+		},
+	}
+
+	scores := ScoreSeasonStats(stats)
+
+	require.Greater(t, scores[1].HitterScore, scores[2].HitterScore)
+	require.Greater(t, scores[2].HitterScore, scores[3].HitterScore)
+}
+
 func TestHitterBaseScoreIgnoresDerivedOPSInput(t *testing.T) {
 	stats := []models.SeasonStat{
 		{
