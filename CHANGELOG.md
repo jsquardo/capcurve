@@ -1,3 +1,18 @@
+## [2026-03-15] — Session Summary
+
+### Added
+- Added a regression test proving hitter base scoring ignores derived `OPS` changes when the non-derivative hitter inputs stay the same
+
+### Changed
+- Reweighted hitter base scoring to use `OBP 0.28`, `SLG 0.24`, `BattingAvg 0.08`, `HomeRuns 0.10`, `RBI 0.07`, `StolenBases 0.05`, and `BABIP 0.05`
+- Updated `AGENTS.md` Phase 1 scoring guidance to record the permanent hitter base-weight rule and note that WAR should eventually be added at `0.05`-`0.10` once the data model supports it
+
+### Fixed
+- Removed hitter-score double counting caused by scoring `OBP`, `SLG`, and derived `OPS` together
+
+### Notes
+- Ran `make test` successfully
+
 ## [2026-03-14] — Session Summary
 
 ### Added

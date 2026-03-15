@@ -25,9 +25,9 @@ type metricConfig struct {
 }
 
 var hitterMetricConfigs = []metricConfig{
-	{weight: 0.22, value: func(stat models.SeasonStat) (float64, bool) { return stat.OBP, true }},
-	{weight: 0.20, value: func(stat models.SeasonStat) (float64, bool) { return stat.SLG, true }},
-	{weight: 0.18, value: func(stat models.SeasonStat) (float64, bool) { return stat.OPS, true }},
+	{weight: 0.28, value: func(stat models.SeasonStat) (float64, bool) { return stat.OBP, true }},
+	{weight: 0.24, value: func(stat models.SeasonStat) (float64, bool) { return stat.SLG, true }},
+	{weight: 0.08, value: func(stat models.SeasonStat) (float64, bool) { return stat.BattingAvg, true }},
 	{weight: 0.10, value: func(stat models.SeasonStat) (float64, bool) { return float64(stat.HomeRuns), true }},
 	{weight: 0.07, value: func(stat models.SeasonStat) (float64, bool) { return float64(stat.RBI), true }},
 	{weight: 0.05, value: func(stat models.SeasonStat) (float64, bool) { return float64(stat.StolenBases), true }},

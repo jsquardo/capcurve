@@ -156,6 +156,41 @@ func TestPartialSavantCoverageOnlyUsesAvailableMetrics(t *testing.T) {
 	require.Greater(t, scores[1].HitterScore, scores[2].HitterScore)
 }
 
+func TestHitterBaseScoreIgnoresDerivedOPSInput(t *testing.T) {
+	stats := []models.SeasonStat{
+		{
+			Model:            gorm.Model{ID: 1},
+			Year:             2024,
+			PlateAppearances: 560,
+			BattingAvg:       0.295,
+			HomeRuns:         30,
+			RBI:              90,
+			StolenBases:      12,
+			OBP:              0.370,
+			SLG:              0.540,
+			OPS:              0.910,
+			BABIP:            0.305,
+		},
+		{
+			Model:            gorm.Model{ID: 2},
+			Year:             2024,
+			PlateAppearances: 560,
+			BattingAvg:       0.295,
+			HomeRuns:         30,
+			RBI:              90,
+			StolenBases:      12,
+			OBP:              0.370,
+			SLG:              0.540,
+			OPS:              0.990,
+			BABIP:            0.305,
+		},
+	}
+
+	scores := ScoreSeasonStats(stats)
+
+	require.Equal(t, scores[1].HitterScore, scores[2].HitterScore)
+}
+
 func TestTwoWayBlendProducesBothSubscoresAndWorkloadWeightedFinal(t *testing.T) {
 	expectedWOBA := 0.410
 	expectedERA := 3.05
@@ -164,6 +199,7 @@ func TestTwoWayBlendProducesBothSubscoresAndWorkloadWeightedFinal(t *testing.T) 
 			Model:              gorm.Model{ID: 1},
 			Year:               2024,
 			PlateAppearances:   520,
+			BattingAvg:         0.310,
 			HomeRuns:           38,
 			RBI:                95,
 			StolenBases:        24,
@@ -188,6 +224,7 @@ func TestTwoWayBlendProducesBothSubscoresAndWorkloadWeightedFinal(t *testing.T) 
 			Model:              gorm.Model{ID: 2},
 			Year:               2024,
 			PlateAppearances:   610,
+			BattingAvg:         0.326,
 			HomeRuns:           42,
 			RBI:                118,
 			StolenBases:        8,
@@ -236,6 +273,7 @@ func TestTwoWayBlendLetsEligibleSideDominate(t *testing.T) {
 			Model:              gorm.Model{ID: 1},
 			Year:               2024,
 			PlateAppearances:   540,
+			BattingAvg:         0.302,
 			HomeRuns:           34,
 			RBI:                101,
 			StolenBases:        18,
