@@ -1,6 +1,21 @@
 ## [2026-03-16] — Session Summary
 
 ### Added
+- Added rollback-time SQL handling in migration `000004` for soft-deleted `season_stats` tombstones that would otherwise collide with the restored legacy `(player_id, year, team_id)` uniqueness rule
+
+### Changed
+- Updated the `000004` down migration to null only conflicting soft-deleted tombstone team keys before re-adding the old unique constraint
+
+### Fixed
+- Prevented rollback of migration `000004` from failing when preserved tombstones share a `(player_id, year, team_id)` key with active data or newer tombstones
+
+### Notes
+- Verified the rollback SQL against a temporary Postgres table containing both active-plus-tombstone and tombstone-only duplicate team keys, then rolled the verification transaction back
+- Ran `make test` successfully
+
+## [2026-03-16] — Session Summary
+
+### Added
 - Added regression coverage proving traded-season merges keep the higher split `Age` when MLB rows disagree across an in-season birthday
 
 ### Changed
