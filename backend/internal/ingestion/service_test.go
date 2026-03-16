@@ -25,9 +25,8 @@ func TestSeasonStatUpsertClauseTargetsActivePlayerYearRows(t *testing.T) {
 		updatedColumns = append(updatedColumns, assignment.Column.Name)
 	}
 
-	require.Contains(t, updatedColumns, "team_id")
-	require.Contains(t, updatedColumns, "team_name")
-	require.Contains(t, updatedColumns, "sweet_spot_pct")
+	require.Len(t, updatedColumns, len(seasonStatUpsertColumns))
+	require.ElementsMatch(t, seasonStatUpsertColumns, updatedColumns)
 }
 
 func TestOrderedSeasonSplitsKeepsRealTeamsAheadOfAggregateRows(t *testing.T) {

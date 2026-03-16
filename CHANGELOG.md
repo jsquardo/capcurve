@@ -1,6 +1,20 @@
 ## [2026-03-16] — Session Summary
 
 ### Added
+- Added stricter ingestion upsert regression coverage that asserts the full mutable `season_stats` update column set
+
+### Changed
+- Updated the ingestion upsert clause test to compare the emitted conflict-update columns against the complete declared `seasonStatUpsertColumns` list instead of spot-checking representative fields
+
+### Fixed
+- Closed a regression gap where future mutable `season_stats` columns could have been added or removed from the upsert clause without the test noticing
+
+### Notes
+- Ran `make test` successfully
+
+## [2026-03-16] — Session Summary
+
+### Added
 - Added rollback-time SQL handling in migration `000004` for soft-deleted `season_stats` tombstones that would otherwise collide with the restored legacy `(player_id, year, team_id)` uniqueness rule
 
 ### Changed
