@@ -21,6 +21,7 @@ type SeasonStatRecord struct {
 	Age         int
 	HasHitting  bool
 	HasPitching bool
+	sourceOrder int
 
 	GamesPlayed      int
 	GamesStarted     int

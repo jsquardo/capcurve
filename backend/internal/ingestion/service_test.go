@@ -29,3 +29,23 @@ func TestSeasonStatUpsertClauseTargetsActivePlayerYearRows(t *testing.T) {
 	require.Contains(t, updatedColumns, "team_name")
 	require.Contains(t, updatedColumns, "sweet_spot_pct")
 }
+
+func TestOrderedSeasonSplitsKeepsRealTeamsAheadOfAggregateRows(t *testing.T) {
+	t.Parallel()
+
+	ordered := orderedSeasonSplits([]MLBSeasonSplit{
+		{Season: "2023", Team: mlbStatTeam{ID: 135, Name: "San Diego Padres"}},
+		{Season: "2022", Team: mlbStatTeam{ID: 0, Name: "TOT"}},
+		{Season: "2022", Team: mlbStatTeam{ID: 120, Name: "Washington Nationals"}},
+		{Season: "2022", Team: mlbStatTeam{ID: 135, Name: "San Diego Padres"}},
+	})
+
+	require.Len(t, ordered, 4)
+	require.Equal(t, 2022, parseStringInt(ordered[0].split.Season))
+	require.Equal(t, 120, ordered[0].split.Team.ID)
+	require.Equal(t, 2, ordered[0].sourceOrder)
+	require.Equal(t, 135, ordered[1].split.Team.ID)
+	require.Equal(t, 3, ordered[1].sourceOrder)
+	require.Equal(t, 0, ordered[2].split.Team.ID)
+	require.Equal(t, 2023, parseStringInt(ordered[3].split.Season))
+}

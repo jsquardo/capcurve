@@ -260,13 +260,17 @@ func mergePitchingSeason(existing SeasonStatRecord, incoming SeasonStatRecord) S
 }
 
 func mergeSeasonIdentity(current *SeasonStatRecord, incoming SeasonStatRecord) {
-	if incoming.TeamID != 0 && incoming.TeamID != current.TeamID {
+	if incoming.sourceOrder >= current.sourceOrder && incoming.TeamID != 0 {
 		current.TeamID = incoming.TeamID
 		current.TeamName = incoming.TeamName
+		current.sourceOrder = incoming.sourceOrder
 	}
 	if current.TeamName == "" {
 		current.TeamName = incoming.TeamName
 	}
+	// MLB split ages can differ within one season if a player is traded after a
+	// birthday. Keeping the higher age preserves the end-of-season season_stats
+	// age instead of making it depend on split merge order.
 	if incoming.Age > current.Age {
 		current.Age = incoming.Age
 	}

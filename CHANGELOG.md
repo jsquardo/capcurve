@@ -1,6 +1,37 @@
 ## [2026-03-16] — Session Summary
 
 ### Added
+- Added regression coverage proving traded-season merges keep the higher split `Age` when MLB rows disagree across an in-season birthday
+
+### Changed
+- Documented the traded-season age merge rule directly in ingestion so future cleanup work does not have to infer why `Age` uses a max merge
+
+### Fixed
+- Removed ambiguity around traded-season age handling by making the end-of-season-age rule explicit in code and tests
+
+### Notes
+- MLB split payloads can report different ages within one season when a trade happens before and after a birthday; merged season rows now document that they intentionally keep the higher age
+- Ran `make test` successfully
+
+## [2026-03-16] — Session Summary
+
+### Added
+- Added regression coverage for deterministic traded-season split ordering and canonical team metadata retention across out-of-order merge calls
+
+### Changed
+- Updated ingestion split merging to carry explicit MLB source split order through normalization so canonical traded-season team metadata no longer depends on incidental merge overwrite order
+- Forced aggregate `TOT` rows behind real team splits inside ingestion ordering so they cannot compete for canonical team metadata
+
+### Fixed
+- Removed the implicit "last merge wins" behavior that previously decided traded-season canonical team metadata without recording why that team won
+
+### Notes
+- The MLB year-by-year payload does not expose a dedicated trade timestamp, so ingestion now treats source split order as the explicit chronology signal for intra-season team ordering
+- Ran `make test` successfully
+
+## [2026-03-16] — Session Summary
+
+### Added
 - Added a shared `internal/baseball` helper package for MLB baseball-notation innings parsing and outs conversion
 - Added regression coverage for shared innings parsing, float-based persisted innings validation, and scoring rejection of malformed pitcher workloads
 

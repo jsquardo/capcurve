@@ -234,6 +234,78 @@ func TestMergeSplitsSkipsAggregateRows(t *testing.T) {
 	}
 }
 
+func TestMergeSeasonGroupKeepsLaterSourceOrderAsCanonicalTeam(t *testing.T) {
+	t.Parallel()
+
+	laterSplit := SeasonStatRecord{
+		Year:             2022,
+		TeamID:           135,
+		TeamName:         "San Diego Padres",
+		HasHitting:       true,
+		PlateAppearances: 228,
+		HomeRuns:         6,
+		sourceOrder:      1,
+	}
+	earlierSplit := SeasonStatRecord{
+		Year:             2022,
+		TeamID:           120,
+		TeamName:         "Washington Nationals",
+		HasHitting:       true,
+		PlateAppearances: 436,
+		HomeRuns:         21,
+		sourceOrder:      0,
+	}
+
+	merged := MergeSeasonGroup(laterSplit, earlierSplit, "hitting")
+
+	if merged.TeamID != 135 || merged.TeamName != "San Diego Padres" {
+		t.Fatalf("expected later source-order team metadata to survive out-of-order merge, got team_id=%d team_name=%q", merged.TeamID, merged.TeamName)
+	}
+	if merged.PlateAppearances != 664 {
+		t.Fatalf("PlateAppearances = %d, want 664", merged.PlateAppearances)
+	}
+	if merged.HomeRuns != 27 {
+		t.Fatalf("HomeRuns = %d, want 27", merged.HomeRuns)
+	}
+}
+
+func TestMergeSeasonGroupKeepsHigherAgeAcrossTradedSplits(t *testing.T) {
+	t.Parallel()
+
+	beforeBirthday := SeasonStatRecord{
+		Year:             2022,
+		TeamID:           120,
+		TeamName:         "Washington Nationals",
+		Age:              23,
+		HasHitting:       true,
+		PlateAppearances: 436,
+		HomeRuns:         21,
+		sourceOrder:      0,
+	}
+	afterBirthday := SeasonStatRecord{
+		Year:             2022,
+		TeamID:           135,
+		TeamName:         "San Diego Padres",
+		Age:              24,
+		HasHitting:       true,
+		PlateAppearances: 228,
+		HomeRuns:         6,
+		sourceOrder:      1,
+	}
+
+	merged := MergeSeasonGroup(beforeBirthday, afterBirthday, "hitting")
+
+	if merged.Age != 24 {
+		t.Fatalf("Age = %d, want 24", merged.Age)
+	}
+	if merged.TeamID != 135 || merged.TeamName != "San Diego Padres" {
+		t.Fatalf("expected later split to remain canonical team metadata, got team_id=%d team_name=%q", merged.TeamID, merged.TeamName)
+	}
+	if merged.PlateAppearances != 664 {
+		t.Fatalf("PlateAppearances = %d, want 664", merged.PlateAppearances)
+	}
+}
+
 func TestMergeSeasonGroupAggregatesPitchingRatesAcrossTeams(t *testing.T) {
 	t.Parallel()
 

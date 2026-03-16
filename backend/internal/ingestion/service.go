@@ -167,7 +167,8 @@ func (s *Service) SyncPlayer(ctx context.Context, playerID int) (*models.Player,
 
 // mergeSplits folds one MLB stat group into the in-memory season map before persistence.
 func (s *Service) mergeSplits(records map[string]SeasonStatRecord, splits []MLBSeasonSplit, group string) error {
-	for _, split := range splits {
+	for _, ordered := range orderedSeasonSplits(splits) {
+		split := ordered.split
 		if IsAggregateSeasonSplit(split) {
 			continue
 		}
@@ -176,6 +177,7 @@ func (s *Service) mergeSplits(records map[string]SeasonStatRecord, splits []MLBS
 		if err != nil {
 			return err
 		}
+		record.sourceOrder = ordered.sourceOrder
 
 		key := seasonKey(record.Year)
 		records[key] = MergeSeasonGroup(records[key], record, group)
@@ -239,6 +241,44 @@ func seasonYears(records map[string]SeasonStatRecord) []int {
 // seasonKey matches the active-row uniqueness rule used by season_stats.
 func seasonKey(year int) string {
 	return fmt.Sprintf("%d", year)
+}
+
+type orderedSplit struct {
+	split       MLBSeasonSplit
+	sourceOrder int
+}
+
+// orderedSeasonSplits makes the MLB payload chronology dependency explicit.
+// yearByYear splits do not expose a trade timestamp, so source slice position is
+// the only intra-season ordering signal available for deciding which real-team
+// split should become the canonical team metadata. Aggregate TOT rows are forced
+// behind real splits for the same season so they can never compete for that role.
+func orderedSeasonSplits(splits []MLBSeasonSplit) []orderedSplit {
+	ordered := make([]orderedSplit, 0, len(splits))
+	for i, split := range splits {
+		ordered = append(ordered, orderedSplit{
+			split:       split,
+			sourceOrder: i,
+		})
+	}
+
+	sort.SliceStable(ordered, func(i, j int) bool {
+		leftYear := parseStringInt(ordered[i].split.Season)
+		rightYear := parseStringInt(ordered[j].split.Season)
+		if leftYear != rightYear {
+			return leftYear < rightYear
+		}
+
+		leftAggregate := IsAggregateSeasonSplit(ordered[i].split)
+		rightAggregate := IsAggregateSeasonSplit(ordered[j].split)
+		if leftAggregate != rightAggregate {
+			return !leftAggregate && rightAggregate
+		}
+
+		return ordered[i].sourceOrder < ordered[j].sourceOrder
+	})
+
+	return ordered
 }
 
 func seasonStatUpsertClause() clause.OnConflict {
