@@ -1,6 +1,20 @@
 ## [2026-03-16] — Session Summary
 
 ### Added
+- Added a post-ordering traded-player ingestion spot check covering Juan Soto (`665742`), Justin Verlander (`434378`), and Albert Pujols (`405395`)
+
+### Changed
+- Re-ran the ingestion CLI for the representative traded-player set to confirm the deterministic split-ordering work still preserves canonical final-team metadata on merged seasons
+
+### Fixed
+- Confirmed the updated active-row unique index and upsert target still leave exactly one active `season_stats` row per `player_id + year` for the spot-checked traded seasons
+
+### Notes
+- Postgres verification showed one active row each for Soto `2022`, Verlander `2017`, and Pujols `2021`, with no active duplicate player-year rows for the spot-checked players
+
+## [2026-03-16] — Session Summary
+
+### Added
 - Added stricter ingestion upsert regression coverage that asserts the full mutable `season_stats` update column set
 
 ### Changed
