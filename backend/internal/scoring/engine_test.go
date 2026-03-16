@@ -94,13 +94,6 @@ func TestPitcherPercentileCohortExcludesTinySamples(t *testing.T) {
 	require.Greater(t, scores[1].PitcherScore, 0.0)
 }
 
-func TestTrueInningsFromBaseballNotation(t *testing.T) {
-	require.InDelta(t, 29.6666667, trueInningsFromBaseballNotation(29.2), 0.000001)
-	require.InDelta(t, 10.3333333, trueInningsFromBaseballNotation(10.1), 0.000001)
-	require.Equal(t, 0.0, trueInningsFromBaseballNotation(0))
-	require.Equal(t, 10.4, trueInningsFromBaseballNotation(10.4))
-}
-
 func TestPitcherScoreUsesOutsBasedWorkloadDampener(t *testing.T) {
 	stats := []models.SeasonStat{
 		newPitcherStat(1, 2024, 29.2, 3.20, 1.08, 10.0, 2.4, 6.7, 0.8, 4.2, 67.0, nil),
@@ -112,6 +105,19 @@ func TestPitcherScoreUsesOutsBasedWorkloadDampener(t *testing.T) {
 
 	require.Equal(t, 49.44, scores[1].PitcherScore)
 	require.Equal(t, 48.33, scores[2].PitcherScore)
+}
+
+func TestMalformedPitcherInningsAreRejectedAsWorkload(t *testing.T) {
+	stats := []models.SeasonStat{
+		newPitcherStat(1, 2024, 10.4, 2.80, 1.02, 11.2, 2.1, 6.8, 0.7, 5.3, 68.0, nil),
+		newPitcherStat(2, 2024, 160.0, 4.10, 1.28, 8.9, 3.0, 8.5, 1.2, 2.9, 63.0, nil),
+	}
+
+	scores := ScoreSeasonStats(stats)
+
+	require.Equal(t, 0.0, scores[1].PitcherScore)
+	require.Equal(t, 0.0, scores[1].FinalScore)
+	require.Greater(t, scores[2].PitcherScore, 0.0)
 }
 
 func TestPartialSavantCoverageOnlyUsesAvailableMetrics(t *testing.T) {

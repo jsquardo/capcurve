@@ -75,3 +75,11 @@ func TestParseBaseballInnings(t *testing.T) {
 		})
 	}
 }
+
+func TestBaseballInningsFromOuts(t *testing.T) {
+	t.Parallel()
+
+	if got := baseballInningsFromOuts(392); got != 130.2 {
+		t.Fatalf("baseballInningsFromOuts(392) = %v, want 130.2", got)
+	}
+}

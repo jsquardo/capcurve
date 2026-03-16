@@ -4,6 +4,7 @@ import (
 	"math"
 	"sort"
 
+	"github.com/jsquardo/capcurve/internal/baseball"
 	"github.com/jsquardo/capcurve/internal/models"
 )
 
@@ -250,28 +251,16 @@ func roleWorkload(sample float64, threshold float64) float64 {
 
 // season_stats.innings_pitched is still stored in MLB baseball notation, so
 // scoring must convert values like 29.2 back into 29 2/3 true innings before
-// applying workload thresholds, dampeners, or two-way role weighting.
+// applying workload thresholds, dampeners, or two-way role weighting. If a
+// persisted value is malformed, scoring rejects it as zero workload so it
+// cannot quietly distort pitcher eligibility or two-way weighting.
 func pitchingWorkloadInnings(stat models.SeasonStat) float64 {
-	return trueInningsFromBaseballNotation(stat.InningsPitched)
-}
-
-func trueInningsFromBaseballNotation(innings float64) float64 {
-	if innings <= 0 {
+	innings, err := baseball.TrueInningsFromBaseballNotation(stat.InningsPitched)
+	if err != nil {
 		return 0
 	}
 
-	tenths := int(math.Round(innings * 10))
-	whole := tenths / 10
-	partial := tenths % 10
-
-	switch partial {
-	case 0:
-		return float64(whole)
-	case 1, 2:
-		return float64((whole*3)+partial) / 3
-	default:
-		return innings
-	}
+	return innings
 }
 
 func mergeWeightedScores(primary float64, primaryWeight float64, secondary float64, secondaryWeight float64) float64 {

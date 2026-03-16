@@ -1,3 +1,34 @@
+## [2026-03-16] — Session Summary
+
+### Added
+- Added a shared `internal/baseball` helper package for MLB baseball-notation innings parsing and outs conversion
+- Added regression coverage for shared innings parsing, float-based persisted innings validation, and scoring rejection of malformed pitcher workloads
+
+### Changed
+- Updated ingestion innings parsing and outs-to-notation conversion to delegate to the shared helper instead of maintaining duplicate rules
+- Updated scoring workload normalization to use the shared helper and reject malformed persisted innings values such as `10.4` as zero workload
+
+### Fixed
+- Eliminated the scoring-side fallback that previously treated malformed baseball-notation innings as valid decimal innings
+
+### Notes
+- Ran `make test` successfully
+
+## [2026-03-16] — Session Summary
+
+### Added
+- Added the permanent Phase 1 rule documenting database-enforced active `season_stats` uniqueness at the `player_id + year` grain
+
+### Changed
+- Updated `AGENTS.md` Current State priorities to reflect the review findings, keeping malformed baseball-notation innings as the top Phase 1 blocker
+- Added the review follow-up tasks for rollback safety and stronger ingestion upsert coverage to the Current State secondary task list
+
+### Fixed
+- None
+
+### Notes
+- Documentation-only session; no code changes were made
+
 ## [2026-03-15] — Session Summary
 
 ### Added
