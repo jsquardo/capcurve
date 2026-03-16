@@ -104,8 +104,11 @@ type mlbPeopleResponse struct {
 
 type MLBPlayer struct {
 	ID              int               `json:"id"`
+	FullName        string            `json:"fullName"`
 	FirstName       string            `json:"firstName"`
 	LastName        string            `json:"lastName"`
+	UseName         string            `json:"useName"`
+	UseLastName     string            `json:"useLastName"`
 	BirthDate       string            `json:"birthDate"`
 	Active          bool              `json:"active"`
 	PrimaryPosition mlbPosition       `json:"primaryPosition"`

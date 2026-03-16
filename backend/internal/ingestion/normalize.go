@@ -26,8 +26,8 @@ func NormalizePlayer(player *MLBPlayer) (*PlayerRecord, error) {
 
 	return &PlayerRecord{
 		MLBID:       player.ID,
-		FirstName:   player.FirstName,
-		LastName:    player.LastName,
+		FirstName:   preferredPlayerFirstName(player),
+		LastName:    preferredPlayerLastName(player),
 		Position:    player.PrimaryPosition.Name,
 		Bats:        player.BatSide.Code,
 		Throws:      player.PitchHand.Code,
@@ -35,6 +35,20 @@ func NormalizePlayer(player *MLBPlayer) (*PlayerRecord, error) {
 		Active:      player.Active,
 		ImageURL:    fmt.Sprintf(mlbHeadshotURLTemplate, player.ID),
 	}, nil
+}
+
+func preferredPlayerFirstName(player *MLBPlayer) string {
+	if player.UseName != "" {
+		return player.UseName
+	}
+	return player.FirstName
+}
+
+func preferredPlayerLastName(player *MLBPlayer) string {
+	if player.UseLastName != "" {
+		return player.UseLastName
+	}
+	return player.LastName
 }
 
 // NormalizeSeasonSplit maps either a hitting or pitching split into the unified

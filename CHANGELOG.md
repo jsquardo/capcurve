@@ -1,6 +1,23 @@
 ## [2026-03-16] — Session Summary
 
 ### Added
+- Added regression coverage proving ingestion prefers MLB display-name fields for players whose legal first name differs from the public baseball name
+
+### Changed
+- Updated MLB player normalization to prefer `useName` / `useLastName` over `firstName` / `lastName` when the Stats API provides both
+- Re-ran the ingestion CLI for Albert Pujols (`405395`) so the local `players` row now reflects the corrected canonical name
+- Updated `AGENTS.md` Current State so the next task is the remaining broader Phase 1 scoring/data cleanup
+
+### Fixed
+- Corrected the persisted local player record for `mlb_id = 405395` from `Jose Pujols` to `Albert Pujols`
+
+### Notes
+- Verified in Postgres that `players.mlb_id = 405395` now stores `first_name = Albert` and `last_name = Pujols`
+- Ran `make test` successfully
+
+## [2026-03-16] — Session Summary
+
+### Added
 - Added a Current State follow-up to fix the local player-name mismatch for `mlb_id = 405395` during the next ingestion/data cleanup pass
 
 ### Changed

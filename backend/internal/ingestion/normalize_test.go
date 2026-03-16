@@ -37,6 +37,32 @@ func TestNormalizePlayer(t *testing.T) {
 	}
 }
 
+func TestNormalizePlayerPrefersUseNameFields(t *testing.T) {
+	t.Parallel()
+
+	player, err := NormalizePlayer(&MLBPlayer{
+		ID:          405395,
+		FirstName:   "Jose",
+		LastName:    "Pujols",
+		UseName:     "Albert",
+		UseLastName: "Pujols",
+		BirthDate:   "1980-01-16",
+		PrimaryPosition: mlbPosition{
+			Name: "First Base",
+		},
+	})
+	if err != nil {
+		t.Fatalf("NormalizePlayer returned error: %v", err)
+	}
+
+	if player.FirstName != "Albert" {
+		t.Fatalf("FirstName = %q, want %q", player.FirstName, "Albert")
+	}
+	if player.LastName != "Pujols" {
+		t.Fatalf("LastName = %q, want %q", player.LastName, "Pujols")
+	}
+}
+
 func TestMergeSeasonStats(t *testing.T) {
 	t.Parallel()
 
