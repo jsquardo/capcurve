@@ -75,3 +75,13 @@ capcurve/
 ├── docker-compose.yml
 └── Makefile
 ```
+
+## Database Schema
+
+- `players`: Core player identity and MLB metadata
+- `season_stats`: One active row per player-season for persisted hitting/pitching stats, team metadata, and computed `value_score`
+- `contracts`: Contract headers such as total value, years, and signing team
+- `contract_seasons`: Per-season breakdown rows for each contract
+- `career_arcs`: Precomputed career-arc summaries used by the visualizer
+
+`season_stats` active-row uniqueness is enforced in PostgreSQL, not just in application code. The database uses a partial unique index on `(player_id, year) WHERE deleted_at IS NULL`, which allows soft-deleted tombstones to remain for ingestion history without permitting duplicate active rows for the same player-season.

@@ -1,6 +1,20 @@
 ## [2026-03-16] — Session Summary
 
 ### Added
+- Added a Current State follow-up to fix the local player-name mismatch for `mlb_id = 405395` during the next ingestion/data cleanup pass
+
+### Changed
+- Updated `AGENTS.md` notes to clarify that `405395` is Albert Pujols' correct MLB ID and that the mismatch is in local persisted data, not project documentation
+
+### Fixed
+- Corrected the review follow-up scope so the next session targets the database/ingestion name discrepancy instead of changing `AGENTS.md` player-ID documentation
+
+### Notes
+- No code changes; this was a project-state correction after review
+
+## [2026-03-16] — Session Summary
+
+### Added
 - Added a post-ordering traded-player ingestion spot check covering Juan Soto (`665742`), Justin Verlander (`434378`), and Albert Pujols (`405395`)
 
 ### Changed
@@ -242,3 +256,17 @@
 ### Notes
 - Persisted `season_stats.innings_pitched` still remains in MLB baseball notation for schema compatibility; scoring now normalizes it back to true innings internally
 - Ran `make test` successfully
+## [2026-03-16] — Session Summary
+
+### Added
+- Added a Database Schema section to `README.md`
+
+### Changed
+- Documented in `README.md` that active `season_stats` uniqueness is enforced in PostgreSQL with a partial unique index on `(player_id, year) WHERE deleted_at IS NULL`
+- Updated `AGENTS.md` Current State so the Albert Pujols `mlb_id = 405395` player-name mismatch is now the next Phase 1 cleanup task
+
+### Fixed
+- Closed the outstanding repo-doc follow-up for the database-enforced one-active-row-per-player-season rule
+
+### Notes
+- No tests were run because this session only changed repository documentation/state tracking
