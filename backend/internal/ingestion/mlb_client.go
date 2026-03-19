@@ -104,6 +104,7 @@ type mlbPeopleResponse struct {
 
 type MLBPlayer struct {
 	ID              int               `json:"id"`
+	// FullName is retained as a future fallback/debug aid for name normalization.
 	FullName        string            `json:"fullName"`
 	FirstName       string            `json:"firstName"`
 	LastName        string            `json:"lastName"`

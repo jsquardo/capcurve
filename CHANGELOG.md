@@ -1,3 +1,36 @@
+## [2026-03-19] — Session Summary
+
+### Added
+- Added a new `internal/syncjob` package that computes season-aware sync timing and runs background active-player re-ingestion through the existing ingestion service
+- Added unit tests covering in-season vs. off-season scheduling boundaries and the active-player-only sync execution path
+
+### Changed
+- Updated backend startup to launch the scheduler automatically with graceful shutdown handling
+- Extended backend config with sync env settings for enablement, timezone, run time, and off-season weekday
+- Updated `AGENTS.md` and `app-structure.md` to reflect the new daily in-season / weekly off-season cadence and to move the admin dashboard to the front of the queue
+
+### Fixed
+- Ensured scheduled syncs only target players whose `active` flag is true, avoiding unnecessary re-ingestion for retired players
+
+### Notes
+- Default scheduler behavior is `05:00` in `America/New_York`, daily from April through October and weekly on Monday from November through March
+- Could not run `make test` in the Codex shell because `go` and `docker` were unavailable in PATH during this session
+
+## [2026-03-16] — Session Summary
+
+### Added
+- Added documented source-research findings for Cot's Opening Day Salaries and Lahman `Salaries.csv` to `AGENTS.md` so the contract-data source decision can be made from verified inputs instead of assumptions
+
+### Changed
+- Updated `AGENTS.md` Current State to record the confirmed Cot's workbook URL, the verified `2000-2025` tab coverage, the observed Cot's schema drift, and the official Lahman salary-table field list
+
+### Fixed
+- Corrected the project's contract-source decision context by verifying that Cot's is a name-first sheet with no stable player IDs or team field on salary rows, and that Lahman `Salaries.csv` does not contain columns beyond `yearID`, `teamID`, `lgID`, `playerID`, and `salary`
+
+### Notes
+- Research-only session; no importer code, schema changes, or tests were run
+- Verified that the current SABR-linked Lahman documentation still works, but the linked public CSV archive URL resolves to a removed Box share page as of March 16, 2026
+
 ## [2026-03-16] — Session Summary
 
 ### Added
@@ -286,4 +319,21 @@
 - Closed the outstanding repo-doc follow-up for the database-enforced one-active-row-per-player-season rule
 
 ### Notes
+- No tests were run because this session only changed repository documentation/state tracking
+
+## [2026-03-16] — Session Summary
+
+### Added
+- Added contract-data exploration findings to `AGENTS.md` after probing MLB Stats API endpoints for player finances
+
+### Changed
+- Documented that MLB Stats API exposes contract-adjacent transaction events such as signings and free agency, but not salary, total value, AAV, guarantees, options, or contract years
+- Updated `AGENTS.md` Current State so the next Phase 1 task is choosing a non-Stats-API source and ingestion strategy for financial contract data before building the contract importer
+
+### Fixed
+- Closed the open uncertainty about whether MLB Stats API alone can power CapCurve's contract importer strategy
+
+### Notes
+- Tested directly against Shohei Ohtani (`660271`), Aaron Judge (`592450`), and Albert Pujols (`405395`) using `people`, `stats`, `transactions`, and `hydrate=transactions` endpoints
+- Albert Pujols transaction coverage only reached back to 2009 despite his MLB debut on April 2, 2001, so older transaction history should not be treated as complete
 - No tests were run because this session only changed repository documentation/state tracking
