@@ -14,7 +14,7 @@
 
 ### Notes
 - Default scheduler behavior is `05:00` in `America/New_York`, daily from April through October and weekly on Monday from November through March
-- Could not run `make test` in the Codex shell because `go` and `docker` were unavailable in PATH during this session
+- Manually verified tests passing via `cd backend && GOCACHE=/tmp/capcurve-gocache go test -mod=mod ./...`
 
 ## [2026-03-16] — Session Summary
 
