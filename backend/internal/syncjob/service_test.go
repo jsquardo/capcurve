@@ -25,12 +25,15 @@ func (f fakeActivePlayerSource) ActivePlayerMLBIDs(context.Context) ([]int, erro
 }
 
 type fakePlayerSyncer struct {
-	synced []int
-	fail   map[int]error
+	syncedBySeason map[int][]int
+	fail           map[int]error
 }
 
-func (f *fakePlayerSyncer) SyncPlayer(_ context.Context, playerID int) (*models.Player, error) {
-	f.synced = append(f.synced, playerID)
+func (f *fakePlayerSyncer) RefreshPlayerSeason(_ context.Context, playerID int, seasonYear int) (*models.Player, error) {
+	if f.syncedBySeason == nil {
+		f.syncedBySeason = make(map[int][]int)
+	}
+	f.syncedBySeason[seasonYear] = append(f.syncedBySeason[seasonYear], playerID)
 	if err, ok := f.fail[playerID]; ok {
 		return nil, err
 	}
@@ -42,11 +45,12 @@ func TestRunOnceSyncsOnlyActivePlayersReturnedBySource(t *testing.T) {
 	t.Parallel()
 
 	syncer := &fakePlayerSyncer{}
+	now := time.Date(2026, time.July, 10, 5, 0, 0, 0, time.UTC)
 	service := &Service{
 		logger:   slog.Default(),
 		schedule: Schedule{Hour: 5, Weekday: time.Monday},
 		location: time.UTC,
-		now:      time.Now,
+		now:      func() time.Time { return now },
 		players: fakeActivePlayerSource{
 			ids: []int{592450, 660271, 665742},
 		},
@@ -56,7 +60,7 @@ func TestRunOnceSyncsOnlyActivePlayersReturnedBySource(t *testing.T) {
 	err := service.RunOnce(context.Background())
 
 	require.NoError(t, err)
-	require.Equal(t, []int{592450, 660271, 665742}, syncer.synced)
+	require.Equal(t, []int{592450, 660271, 665742}, syncer.syncedBySeason[2026])
 }
 
 func TestRunOnceReturnsFailedPlayerIDs(t *testing.T) {
@@ -67,11 +71,12 @@ func TestRunOnceReturnsFailedPlayerIDs(t *testing.T) {
 			660271: errors.New("mlb unavailable"),
 		},
 	}
+	now := time.Date(2026, time.July, 10, 5, 0, 0, 0, time.UTC)
 	service := &Service{
 		logger:   slog.Default(),
 		schedule: Schedule{Hour: 5, Weekday: time.Monday},
 		location: time.UTC,
-		now:      time.Now,
+		now:      func() time.Time { return now },
 		players: fakeActivePlayerSource{
 			ids: []int{592450, 660271},
 		},
@@ -81,7 +86,7 @@ func TestRunOnceReturnsFailedPlayerIDs(t *testing.T) {
 	err := service.RunOnce(context.Background())
 
 	require.EqualError(t, err, "sync completed with 1 player errors: [660271]")
-	require.Equal(t, []int{592450, 660271}, syncer.synced)
+	require.Equal(t, []int{592450, 660271}, syncer.syncedBySeason[2026])
 }
 
 func TestRunOnceStopsWhenContextIsCanceled(t *testing.T) {
@@ -95,7 +100,7 @@ func TestRunOnceStopsWhenContextIsCanceled(t *testing.T) {
 		logger:   slog.Default(),
 		schedule: Schedule{Hour: 5, Weekday: time.Monday},
 		location: time.UTC,
-		now:      time.Now,
+		now:      func() time.Time { return time.Date(2026, time.July, 10, 5, 0, 0, 0, time.UTC) },
 		players: fakeActivePlayerSource{
 			ids: []int{592450, 660271},
 		},
@@ -105,5 +110,27 @@ func TestRunOnceStopsWhenContextIsCanceled(t *testing.T) {
 	err := service.RunOnce(ctx)
 
 	require.ErrorIs(t, err, context.Canceled)
-	require.Empty(t, syncer.synced)
+	require.Empty(t, syncer.syncedBySeason)
+}
+
+func TestRunOnceUsesMostRecentCompletedSeasonDuringOffseason(t *testing.T) {
+	t.Parallel()
+
+	syncer := &fakePlayerSyncer{}
+	now := time.Date(2026, time.January, 12, 5, 0, 0, 0, time.UTC)
+	service := &Service{
+		logger:   slog.Default(),
+		schedule: Schedule{Hour: 5, Weekday: time.Monday},
+		location: time.UTC,
+		now:      func() time.Time { return now },
+		players: fakeActivePlayerSource{
+			ids: []int{592450, 660271},
+		},
+		syncer: syncer,
+	}
+
+	err := service.RunOnce(context.Background())
+
+	require.NoError(t, err)
+	require.Equal(t, []int{592450, 660271}, syncer.syncedBySeason[2025])
 }

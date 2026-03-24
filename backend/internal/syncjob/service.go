@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/jsquardo/capcurve/internal/models"
@@ -17,7 +18,7 @@ type ActivePlayerSource interface {
 }
 
 type PlayerSyncer interface {
-	SyncPlayer(ctx context.Context, playerID int) (*models.Player, error)
+	RefreshPlayerSeason(ctx context.Context, playerID int, seasonYear int) (*models.Player, error)
 }
 
 type Service struct {
@@ -25,6 +26,8 @@ type Service struct {
 	schedule   Schedule
 	location   *time.Location
 	now        func() time.Time
+	status     *StatusStore
+	statusMu   sync.Mutex
 	players    ActivePlayerSource
 	syncer     PlayerSyncer
 	timerAfter func(time.Duration) <-chan time.Time
@@ -35,6 +38,7 @@ type Options struct {
 	Schedule Schedule
 	Location *time.Location
 	Now      func() time.Time
+	Status   *StatusStore
 }
 
 func NewService(db *gorm.DB, syncer PlayerSyncer, opts Options) *Service {
@@ -53,11 +57,17 @@ func NewService(db *gorm.DB, syncer PlayerSyncer, opts Options) *Service {
 		now = time.Now
 	}
 
+	status := opts.Status
+	if status == nil {
+		status = NewStatusStore(true)
+	}
+
 	return &Service{
 		logger:     logger,
 		schedule:   opts.Schedule,
 		location:   location,
 		now:        now,
+		status:     status,
 		players:    &gormPlayerStore{db: db},
 		syncer:     syncer,
 		timerAfter: time.After,
@@ -75,6 +85,8 @@ func (s *Service) Start(ctx context.Context) {
 			wait = 0
 		}
 
+		s.statusStore().SetNextRun(nextRun, IsInSeason(now))
+
 		s.logger.Info("next sync scheduled", "now", now.Format(time.RFC3339), "next_run", nextRun.Format(time.RFC3339), "in_season", IsInSeason(now))
 
 		select {
@@ -90,12 +102,17 @@ func (s *Service) Start(ctx context.Context) {
 }
 
 func (s *Service) RunOnce(ctx context.Context) error {
+	now := s.now().In(s.location)
+	seasonYear := TargetSeasonYear(now)
+	s.statusStore().MarkRunStarted(now, seasonYear, IsInSeason(now))
+
 	mlbIDs, err := s.players.ActivePlayerMLBIDs(ctx)
 	if err != nil {
+		s.statusStore().MarkRunCompleted(s.now().In(s.location), err)
 		return fmt.Errorf("load active players: %w", err)
 	}
 
-	s.logger.Info("starting active-player sync", "player_count", len(mlbIDs))
+	s.logger.Info("starting active-player sync", "player_count", len(mlbIDs), "season_year", seasonYear, "in_season", IsInSeason(now))
 
 	var failed []int
 	for _, playerID := range mlbIDs {
@@ -103,7 +120,7 @@ func (s *Service) RunOnce(ctx context.Context) error {
 			return err
 		}
 
-		if _, err := s.syncer.SyncPlayer(ctx, playerID); err != nil {
+		if _, err := s.syncer.RefreshPlayerSeason(ctx, playerID, seasonYear); err != nil {
 			failed = append(failed, playerID)
 			s.logger.Error("player sync failed", "mlb_id", playerID, "err", err)
 			continue
@@ -114,11 +131,29 @@ func (s *Service) RunOnce(ctx context.Context) error {
 
 	if len(failed) > 0 {
 		sort.Ints(failed)
-		return fmt.Errorf("sync completed with %d player errors: %v", len(failed), failed)
+		err := fmt.Errorf("sync completed with %d player errors: %v", len(failed), failed)
+		s.statusStore().MarkRunCompleted(s.now().In(s.location), err)
+		return err
 	}
 
-	s.logger.Info("active-player sync completed", "player_count", len(mlbIDs))
+	s.logger.Info("active-player sync completed", "player_count", len(mlbIDs), "season_year", seasonYear)
+	s.statusStore().MarkRunCompleted(s.now().In(s.location), nil)
 	return nil
+}
+
+func (s *Service) Snapshot() StatusSnapshot {
+	return s.statusStore().Snapshot()
+}
+
+func (s *Service) statusStore() *StatusStore {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+
+	if s.status == nil {
+		s.status = NewStatusStore(true)
+	}
+
+	return s.status
 }
 
 type gormPlayerStore struct {

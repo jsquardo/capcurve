@@ -1,16 +1,18 @@
 package handlers
 
 import (
+	"github.com/jsquardo/capcurve/internal/syncjob"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
 
-func RegisterRoutes(e *echo.Echo, db *gorm.DB) {
-	h := &Handler{db: db}
+func RegisterRoutes(e *echo.Echo, db *gorm.DB, syncStatus *syncjob.StatusStore) {
+	h := &Handler{db: db, syncStatus: syncStatus}
 
 	e.GET("/health", h.HealthCheck)
 
 	api := e.Group("/api/v1")
+	api.GET("/admin/dashboard", h.AdminDashboard)
 
 	players := api.Group("/players")
 	players.GET("", h.ListPlayers)
@@ -28,7 +30,8 @@ func RegisterRoutes(e *echo.Echo, db *gorm.DB) {
 }
 
 type Handler struct {
-	db *gorm.DB
+	db         *gorm.DB
+	syncStatus SyncStatusSource
 }
 
 func (h *Handler) HealthCheck(c echo.Context) error {

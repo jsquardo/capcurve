@@ -109,3 +109,21 @@ export interface CareerArcResponse {
   arc: CareerArc
   season_stats: SeasonStat[]
 }
+
+export interface SyncStatus {
+  enabled: boolean
+  running: boolean
+  in_season: boolean
+  target_season_year: number
+  last_sync_started_at: string | null
+  last_sync_completed_at: string | null
+  last_successful_sync_at: string | null
+  next_scheduled_sync_at: string | null
+  last_error: string
+}
+
+export interface AdminDashboard {
+  total_players: number
+  active_players: number
+  sync_status: SyncStatus
+}

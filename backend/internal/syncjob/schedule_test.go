@@ -18,6 +18,16 @@ func TestIsInSeason(t *testing.T) {
 	require.False(t, IsInSeason(time.Date(2026, time.November, 1, 0, 0, 0, 0, location)))
 }
 
+func TestTargetSeasonYear(t *testing.T) {
+	t.Parallel()
+
+	location := time.FixedZone("EST", -5*60*60)
+
+	require.Equal(t, 2025, TargetSeasonYear(time.Date(2026, time.January, 15, 12, 0, 0, 0, location)))
+	require.Equal(t, 2026, TargetSeasonYear(time.Date(2026, time.April, 1, 12, 0, 0, 0, location)))
+	require.Equal(t, 2026, TargetSeasonYear(time.Date(2026, time.November, 15, 12, 0, 0, 0, location)))
+}
+
 func TestScheduleNextRunUsesDailyCadenceDuringSeason(t *testing.T) {
 	t.Parallel()
 

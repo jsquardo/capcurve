@@ -40,6 +40,8 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	syncStatus := syncjob.NewStatusStore(cfg.SyncEnabled)
+
 	if cfg.SyncEnabled {
 		location, err := time.LoadLocation(cfg.SyncTimeZone)
 		if err != nil {
@@ -55,6 +57,7 @@ func main() {
 				Weekday: time.Weekday(cfg.SyncWeekday),
 			},
 			Location: location,
+			Status:   syncStatus,
 		})
 
 		go syncService.Start(ctx)
@@ -62,7 +65,7 @@ func main() {
 
 	// Routes
 	e := echo.New()
-	handlers.RegisterRoutes(e, db)
+	handlers.RegisterRoutes(e, db, syncStatus)
 
 	slog.Info("server starting", "port", cfg.Port)
 

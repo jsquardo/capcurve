@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Player, CareerArcResponse, Contract } from '@/types'
+import type { Player, CareerArcResponse, Contract, AdminDashboard } from '@/types'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api/v1',
@@ -38,6 +38,11 @@ export const getMostOverpaid = async (): Promise<Contract[]> => {
 
 export const getBestValue = async (): Promise<Contract[]> => {
   const { data } = await api.get('/leaderboards/best-value')
+  return data
+}
+
+export const getAdminDashboard = async (): Promise<AdminDashboard> => {
+  const { data } = await api.get('/admin/dashboard')
   return data
 }
 

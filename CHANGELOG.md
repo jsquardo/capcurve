@@ -1,3 +1,22 @@
+## [2026-03-23] — Session Summary
+
+### Added
+- Added a dedicated scheduled-refresh ingestion path that refreshes only one relevant season per active player instead of replaying full history on each scheduled run
+- Added an in-memory scheduler status store plus a minimal read-only admin dashboard endpoint and frontend page at `/admin`
+- Added regression coverage for target-season selection, season-scoped scheduled refresh behavior, and scheduler status lifecycle tracking
+
+### Changed
+- Updated the background sync job to target the active season during April through October and the most recently completed season during the off-season
+- Updated backend startup and routing so the dashboard can read live scheduler status from memory without introducing persistence or auth
+- Updated `AGENTS.md` and `app-structure.md` to mark Phase 1 complete and point the next session at Phase 2 API work
+
+### Fixed
+- Stopped scheduled syncs from re-running full year-by-year ingestion history for active players on every pass
+
+### Notes
+- Verified backend tests with `cd backend && GOCACHE=/tmp/capcurve-gocache go test -mod=mod ./...`
+- Could not run frontend type-check/build in this shell because `npm` is unavailable
+
 ## [2026-03-19] — Session Summary
 
 ### Added

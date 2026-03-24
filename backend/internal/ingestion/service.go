@@ -119,50 +119,45 @@ func (s *Service) SyncPlayer(ctx context.Context, playerID int) (*models.Player,
 		return nil, err
 	}
 
-	var player models.Player
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		player = models.Player{
-			MLBID:       playerRecord.MLBID,
-			FirstName:   playerRecord.FirstName,
-			LastName:    playerRecord.LastName,
-			Position:    playerRecord.Position,
-			Bats:        playerRecord.Bats,
-			Throws:      playerRecord.Throws,
-			DateOfBirth: playerRecord.DateOfBirth,
-			Active:      playerRecord.Active,
-			ImageURL:    playerRecord.ImageURL,
-		}
+	return s.persistPlayerAndSeasons(ctx, playerRecord, seasonRecords)
+}
 
-		if err := tx.Where("mlb_id = ?", playerRecord.MLBID).Assign(player).FirstOrCreate(&player).Error; err != nil {
-			return err
-		}
-
-		if err := tx.Where("player_id = ? AND team_id = 0", player.ID).Delete(&models.SeasonStat{}).Error; err != nil {
-			return err
-		}
-
-		for _, record := range orderedSeasonRecords(seasonRecords) {
-			if err := tx.Where("player_id = ? AND year = ? AND team_id <> ?", player.ID, record.Year, record.TeamID).Delete(&models.SeasonStat{}).Error; err != nil {
-				return err
-			}
-
-			season := modelFromSeasonRecord(player.ID, record)
-			if err := tx.Clauses(seasonStatUpsertClause()).Create(&season).Error; err != nil {
-				return err
-			}
-		}
-
-		if err := s.scorer.RecalculateYears(ctx, tx, seasonYears(seasonRecords)); err != nil {
-			return err
-		}
-
-		return tx.Preload("SeasonStats").First(&player, player.ID).Error
-	})
+// RefreshPlayerSeason keeps scheduled sync work scoped to one relevant season
+// while still refreshing the player bio row for active/roster metadata changes.
+func (s *Service) RefreshPlayerSeason(ctx context.Context, playerID int, seasonYear int) (*models.Player, error) {
+	playerData, err := s.mlbClient.FetchPlayer(ctx, playerID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &player, nil
+	playerRecord, err := NormalizePlayer(playerData)
+	if err != nil {
+		return nil, err
+	}
+
+	hittingSplits, err := s.mlbClient.FetchYearByYearStats(ctx, playerID, "hitting")
+	if err != nil {
+		return nil, err
+	}
+
+	pitchingSplits, err := s.mlbClient.FetchYearByYearStats(ctx, playerID, "pitching")
+	if err != nil {
+		return nil, err
+	}
+
+	seasonRecords := make(map[string]SeasonStatRecord)
+	if err := s.mergeSplits(seasonRecords, filterSeasonSplits(hittingSplits, seasonYear), "hitting"); err != nil {
+		return nil, err
+	}
+	if err := s.mergeSplits(seasonRecords, filterSeasonSplits(pitchingSplits, seasonYear), "pitching"); err != nil {
+		return nil, err
+	}
+
+	if err := s.applySavant(ctx, playerID, seasonRecords); err != nil {
+		return nil, err
+	}
+
+	return s.persistPlayerAndSeasons(ctx, playerRecord, seasonRecords)
 }
 
 // mergeSplits folds one MLB stat group into the in-memory season map before persistence.
@@ -236,6 +231,19 @@ func seasonYears(records map[string]SeasonStatRecord) []int {
 		years = append(years, record.Year)
 	}
 	return years
+}
+
+func filterSeasonSplits(splits []MLBSeasonSplit, seasonYear int) []MLBSeasonSplit {
+	filtered := make([]MLBSeasonSplit, 0, len(splits))
+	for _, split := range splits {
+		if parseStringInt(split.Season) != seasonYear {
+			continue
+		}
+
+		filtered = append(filtered, split)
+	}
+
+	return filtered
 }
 
 // seasonKey matches the active-row uniqueness rule used by season_stats.
@@ -346,4 +354,53 @@ func modelFromSeasonRecord(playerID uint, record SeasonStatRecord) models.Season
 		AvgLaunchAngle:     record.AvgLaunchAngle,
 		SweetSpotPct:       record.SweetSpotPct,
 	}
+}
+
+func (s *Service) persistPlayerAndSeasons(ctx context.Context, playerRecord *PlayerRecord, seasonRecords map[string]SeasonStatRecord) (*models.Player, error) {
+	var player models.Player
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		player = models.Player{
+			MLBID:       playerRecord.MLBID,
+			FirstName:   playerRecord.FirstName,
+			LastName:    playerRecord.LastName,
+			Position:    playerRecord.Position,
+			Bats:        playerRecord.Bats,
+			Throws:      playerRecord.Throws,
+			DateOfBirth: playerRecord.DateOfBirth,
+			Active:      playerRecord.Active,
+			ImageURL:    playerRecord.ImageURL,
+		}
+
+		if err := tx.Where("mlb_id = ?", playerRecord.MLBID).Assign(player).FirstOrCreate(&player).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("player_id = ? AND team_id = 0", player.ID).Delete(&models.SeasonStat{}).Error; err != nil {
+			return err
+		}
+
+		for _, record := range orderedSeasonRecords(seasonRecords) {
+			if err := tx.Where("player_id = ? AND year = ? AND team_id <> ?", player.ID, record.Year, record.TeamID).Delete(&models.SeasonStat{}).Error; err != nil {
+				return err
+			}
+
+			season := modelFromSeasonRecord(player.ID, record)
+			if err := tx.Clauses(seasonStatUpsertClause()).Create(&season).Error; err != nil {
+				return err
+			}
+		}
+
+		if len(seasonRecords) > 0 {
+			if err := s.scorer.RecalculateYears(ctx, tx, seasonYears(seasonRecords)); err != nil {
+				return err
+			}
+		}
+
+		return tx.Preload("SeasonStats").First(&player, player.ID).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &player, nil
 }

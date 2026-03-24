@@ -3,6 +3,7 @@ import Layout from '@/components/Layout'
 import HomePage from '@/pages/HomePage'
 import PlayerPage from '@/pages/PlayerPage'
 import LeaderboardsPage from '@/pages/LeaderboardsPage'
+import AdminDashboardPage from '@/pages/AdminDashboardPage'
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/players/:id" element={<PlayerPage />} />
         <Route path="/leaderboards" element={<LeaderboardsPage />} />
+        <Route path="/admin" element={<AdminDashboardPage />} />
       </Route>
     </Routes>
   )

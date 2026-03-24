@@ -48,3 +48,20 @@ func TestOrderedSeasonSplitsKeepsRealTeamsAheadOfAggregateRows(t *testing.T) {
 	require.Equal(t, 0, ordered[2].split.Team.ID)
 	require.Equal(t, 2023, parseStringInt(ordered[3].split.Season))
 }
+
+func TestFilterSeasonSplitsKeepsOnlyRequestedYear(t *testing.T) {
+	t.Parallel()
+
+	filtered := filterSeasonSplits([]MLBSeasonSplit{
+		{Season: "2024", Team: mlbStatTeam{ID: 147, Name: "New York Yankees"}},
+		{Season: "2025", Team: mlbStatTeam{ID: 147, Name: "New York Yankees"}},
+		{Season: "2025", Team: mlbStatTeam{ID: 0, Name: "TOT"}},
+		{Season: "2026", Team: mlbStatTeam{ID: 111, Name: "Boston Red Sox"}},
+	}, 2025)
+
+	require.Len(t, filtered, 2)
+	require.Equal(t, "2025", filtered[0].Season)
+	require.Equal(t, 147, filtered[0].Team.ID)
+	require.Equal(t, "2025", filtered[1].Season)
+	require.Equal(t, 0, filtered[1].Team.ID)
+}

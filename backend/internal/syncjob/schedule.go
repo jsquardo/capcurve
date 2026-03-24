@@ -27,6 +27,18 @@ func IsInSeason(now time.Time) bool {
 	return month >= inSeasonStartMonth && month <= inSeasonEndMonth
 }
 
+// TargetSeasonYear keeps scheduled refreshes scoped to a single relevant season.
+// In-season runs refresh the active season. Off-season runs refresh the most
+// recently completed season so weekly updates still capture late stat corrections
+// and active-player metadata changes without reprocessing full history.
+func TargetSeasonYear(now time.Time) int {
+	if now.Month() >= inSeasonStartMonth {
+		return now.Year()
+	}
+
+	return now.Year() - 1
+}
+
 func nextDailyRun(now time.Time, hour int, minute int) time.Time {
 	candidate := time.Date(now.Year(), now.Month(), now.Day(), hour, minute, 0, 0, now.Location())
 	if !candidate.After(now) {
