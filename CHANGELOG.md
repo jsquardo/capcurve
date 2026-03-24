@@ -1,6 +1,23 @@
 ## [2026-03-23] — Session Summary
 
 ### Added
+- Added review-driven documentation follow-ups to `AGENTS.md` so the scheduler cancellation bug is now the top-priority next task
+
+### Changed
+- Updated `AGENTS.md` Current State ordering to put the in-memory scheduler cancellation bug ahead of Phase 2 API work
+- Reconciled `app-structure.md` with `AGENTS.md` by marking Phase 1 complete in both places
+- Recorded the manually verified frontend build command in `AGENTS.md`
+
+### Fixed
+- Corrected the project-state docs so the repo no longer gives conflicting guidance about whether Phase 1 is complete
+
+### Notes
+- Docs-only session; no code changes were made
+- Frontend build was manually verified passing via `docker compose exec frontend npm run build`
+
+## [2026-03-23] — Session Summary
+
+### Added
 - Added a dedicated scheduled-refresh ingestion path that refreshes only one relevant season per active player instead of replaying full history on each scheduled run
 - Added an in-memory scheduler status store plus a minimal read-only admin dashboard endpoint and frontend page at `/admin`
 - Added regression coverage for target-season selection, season-scoped scheduled refresh behavior, and scheduler status lifecycle tracking
