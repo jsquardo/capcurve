@@ -1,6 +1,7 @@
 package syncjob
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -46,4 +47,19 @@ func TestStatusStoreKeepsLastSuccessfulSyncWhenRunFails(t *testing.T) {
 	require.Equal(t, failedAt, *snapshot.LastSyncCompletedAt)
 	require.Equal(t, successAt, *snapshot.LastSuccessfulSyncAt)
 	require.Equal(t, "sync completed with 1 player errors: [660271]", snapshot.LastError)
+}
+
+func TestStatusStoreHumanizesCancellationAndTimeoutErrors(t *testing.T) {
+	t.Parallel()
+
+	store := NewStatusStore(true)
+	completedAt := time.Date(2026, time.July, 10, 5, 2, 0, 0, time.UTC)
+
+	store.MarkRunCompleted(completedAt, context.Canceled)
+	snapshot := store.Snapshot()
+	require.Equal(t, "sync interrupted", snapshot.LastError)
+
+	store.MarkRunCompleted(completedAt.Add(time.Minute), context.DeadlineExceeded)
+	snapshot = store.Snapshot()
+	require.Equal(t, "sync timed out", snapshot.LastError)
 }

@@ -113,6 +113,38 @@ func TestRunOnceStopsWhenContextIsCanceled(t *testing.T) {
 	require.Empty(t, syncer.syncedBySeason)
 }
 
+func TestRunOnceClearsRunningStatusWhenContextIsCanceled(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	status := NewStatusStore(true)
+	now := time.Date(2026, time.July, 10, 5, 0, 0, 0, time.UTC)
+	service := &Service{
+		logger:   slog.Default(),
+		schedule: Schedule{Hour: 5, Weekday: time.Monday},
+		location: time.UTC,
+		now:      func() time.Time { return now },
+		status:   status,
+		players: fakeActivePlayerSource{
+			ids: []int{592450, 660271},
+		},
+		syncer: &fakePlayerSyncer{},
+	}
+
+	cancel()
+	err := service.RunOnce(ctx)
+
+	require.ErrorIs(t, err, context.Canceled)
+
+	snapshot := status.Snapshot()
+	require.False(t, snapshot.Running)
+	require.Equal(t, now, *snapshot.LastSyncStartedAt)
+	require.Equal(t, now, *snapshot.LastSyncCompletedAt)
+	require.Nil(t, snapshot.LastSuccessfulSyncAt)
+	require.Equal(t, "sync interrupted", snapshot.LastError)
+}
+
 func TestRunOnceUsesMostRecentCompletedSeasonDuringOffseason(t *testing.T) {
 	t.Parallel()
 

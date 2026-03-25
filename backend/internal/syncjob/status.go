@@ -1,6 +1,8 @@
 package syncjob
 
 import (
+	"context"
+	"errors"
 	"sync"
 	"time"
 )
@@ -65,10 +67,21 @@ func (s *StatusStore) MarkRunCompleted(completedAt time.Time, err error) {
 	s.snapshot.Running = false
 	s.snapshot.LastSyncCompletedAt = &completedAtCopy
 	if err != nil {
-		s.snapshot.LastError = err.Error()
+		s.snapshot.LastError = humanizeRunError(err)
 		return
 	}
 
 	s.snapshot.LastSuccessfulSyncAt = &completedAtCopy
 	s.snapshot.LastError = ""
+}
+
+func humanizeRunError(err error) string {
+	switch {
+	case errors.Is(err, context.Canceled):
+		return "sync interrupted"
+	case errors.Is(err, context.DeadlineExceeded):
+		return "sync timed out"
+	default:
+		return err.Error()
+	}
 }

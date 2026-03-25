@@ -101,14 +101,16 @@ func (s *Service) Start(ctx context.Context) {
 	}
 }
 
-func (s *Service) RunOnce(ctx context.Context) error {
+func (s *Service) RunOnce(ctx context.Context) (err error) {
 	now := s.now().In(s.location)
 	seasonYear := TargetSeasonYear(now)
 	s.statusStore().MarkRunStarted(now, seasonYear, IsInSeason(now))
+	defer func() {
+		s.statusStore().MarkRunCompleted(s.now().In(s.location), err)
+	}()
 
 	mlbIDs, err := s.players.ActivePlayerMLBIDs(ctx)
 	if err != nil {
-		s.statusStore().MarkRunCompleted(s.now().In(s.location), err)
 		return fmt.Errorf("load active players: %w", err)
 	}
 
@@ -131,13 +133,10 @@ func (s *Service) RunOnce(ctx context.Context) error {
 
 	if len(failed) > 0 {
 		sort.Ints(failed)
-		err := fmt.Errorf("sync completed with %d player errors: %v", len(failed), failed)
-		s.statusStore().MarkRunCompleted(s.now().In(s.location), err)
-		return err
+		return fmt.Errorf("sync completed with %d player errors: %v", len(failed), failed)
 	}
 
 	s.logger.Info("active-player sync completed", "player_count", len(mlbIDs), "season_year", seasonYear)
-	s.statusStore().MarkRunCompleted(s.now().In(s.location), nil)
 	return nil
 }
 

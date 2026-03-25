@@ -1,3 +1,21 @@
+## [2026-03-25] — Session Summary
+
+### Added
+- Added regression coverage proving a canceled scheduler run now clears the in-memory `running` flag, records completion, and exposes the friendly `sync interrupted` admin status
+- Added status-store coverage for friendly cancellation and timeout messages
+
+### Changed
+- Updated scheduler run lifecycle handling to complete through one deferred path so early exits no longer skip status cleanup
+- Updated admin-facing scheduler error text to show `sync interrupted` for `context.Canceled` and `sync timed out` for `context.DeadlineExceeded`
+- Updated `AGENTS.md` Current State so the next session starts with Phase 2 `GET /api/players` work
+
+### Fixed
+- Fixed the false `running` dashboard state that could persist after shutdown or context cancellation interrupted a scheduled sync
+
+### Notes
+- Verified with `make test`
+- Suggested commit message: `fix(syncjob): clear status on canceled runs`
+
 ## [2026-03-23] — Session Summary
 
 ### Added
