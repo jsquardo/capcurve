@@ -1,6 +1,24 @@
 ## [2026-03-26] — Session Summary
 
 ### Added
+- Added a compact `GET /api/v1/players` response envelope with `data` and `meta` sections for list consumers
+- Added backend endpoint coverage for `q`, `active`, and `sort=-value_score` on the real `/api/v1/players` route
+
+### Changed
+- Updated `GET /api/v1/players` to support `q`, `active`, `position`, `team`, `season`, `limit`, `offset`, and `sort`
+- Updated the player list query to join a derived season snapshot so list rows can include latest-season context without preloading full season histories
+- Updated `AGENTS.md` Current State so the next session moves to reshaping `GET /api/players/:id`
+
+### Fixed
+- Fixed the player list endpoint so joined-field sorting and team filtering operate on a one-row-per-player derived season snapshot instead of raw `season_stats` joins
+- Fixed the list response for players without season data so `latest_season` is `null` instead of an empty object
+
+### Notes
+- Verified with `make test`
+
+## [2026-03-26] — Session Summary
+
+### Added
 - Added frontend build verification for the admin dashboard API path fix via `docker compose exec frontend npm run build`
 
 ### Changed
