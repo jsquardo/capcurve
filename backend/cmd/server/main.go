@@ -65,7 +65,7 @@ func main() {
 
 	// Routes
 	e := echo.New()
-	handlers.RegisterRoutes(e, db, syncStatus)
+	handlers.RegisterRoutes(e, db, syncStatus, cfg.AdminSecret)
 
 	slog.Info("server starting", "port", cfg.Port)
 

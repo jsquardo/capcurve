@@ -6,8 +6,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func RegisterRoutes(e *echo.Echo, db *gorm.DB, syncStatus *syncjob.StatusStore) {
-	h := &Handler{db: db, syncStatus: syncStatus}
+func RegisterRoutes(e *echo.Echo, db *gorm.DB, syncStatus *syncjob.StatusStore, adminSecret string) {
+	h := &Handler{db: db, syncStatus: syncStatus, adminSecret: adminSecret}
 
 	e.GET("/health", h.HealthCheck)
 
@@ -30,8 +30,9 @@ func RegisterRoutes(e *echo.Echo, db *gorm.DB, syncStatus *syncjob.StatusStore) 
 }
 
 type Handler struct {
-	db         *gorm.DB
-	syncStatus SyncStatusSource
+	db          *gorm.DB
+	syncStatus  SyncStatusSource
+	adminSecret string
 }
 
 func (h *Handler) HealthCheck(c echo.Context) error {

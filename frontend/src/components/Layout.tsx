@@ -21,12 +21,6 @@ export default function Layout() {
             >
               Leaderboards
             </NavLink>
-            <NavLink
-              to="/admin"
-              className={({ isActive }) => isActive ? 'text-white' : 'hover:text-white transition-colors'}
-            >
-              Admin
-            </NavLink>
           </div>
         </nav>
       </header>

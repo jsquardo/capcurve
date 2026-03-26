@@ -1,8 +1,11 @@
 import axios from 'axios'
 import type { Player, CareerArcResponse, Contract, AdminDashboard } from '@/types'
 
+const apiBaseURL = import.meta.env.VITE_API_URL ?? '/api/v1'
+const adminSecret = import.meta.env.VITE_ADMIN_SECRET
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? '/api/v1',
+  baseURL: apiBaseURL,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -42,7 +45,13 @@ export const getBestValue = async (): Promise<Contract[]> => {
 }
 
 export const getAdminDashboard = async (): Promise<AdminDashboard> => {
-  const { data } = await api.get('/admin/dashboard')
+  const { data } = await api.get('/admin/dashboard', {
+    headers: adminSecret
+      ? {
+          Authorization: `Bearer ${adminSecret}`,
+        }
+      : undefined,
+  })
   return data
 }
 

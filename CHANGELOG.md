@@ -1,3 +1,24 @@
+## [2026-03-26] — Session Summary
+
+### Added
+- Added backend regression tests covering admin bearer-token validation and unauthorized dashboard requests
+- Added root `.env` entries for `ADMIN_SECRET` and `VITE_ADMIN_SECRET` to support the new local admin dashboard access flow
+
+### Changed
+- Updated the backend admin dashboard endpoint to require `Authorization: Bearer <ADMIN_SECRET>`
+- Updated the frontend admin dashboard request to send `VITE_ADMIN_SECRET` only on the admin dashboard API call
+- Pointed Vite at the repo-root `.env` so frontend env vars load from the same local file as backend env vars
+- Updated `.env.example` to document the new backend/frontend admin secret variables
+- Updated `AGENTS.md` Current State so the next session resumes with Phase 2 player endpoint work
+
+### Fixed
+- Fixed the admin dashboard path/auth mismatch so the page can call the versioned backend admin endpoint with the expected bearer token
+- Removed the Admin link from the public navbar while keeping the `/admin` route directly accessible
+
+### Notes
+- Verified with `make test`
+- Frontend build was not re-run in this shell because `npm` was unavailable locally
+
 ## [2026-03-25] — Session Summary
 
 ### Added

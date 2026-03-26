@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"crypto/subtle"
 	"net/http"
+	"strings"
 
 	"github.com/jsquardo/capcurve/internal/models"
 	"github.com/jsquardo/capcurve/internal/syncjob"
@@ -19,6 +21,10 @@ type AdminDashboardResponse struct {
 }
 
 func (h *Handler) AdminDashboard(c echo.Context) error {
+	if !validAdminAuthorization(c.Request().Header.Get(echo.HeaderAuthorization), h.adminSecret) {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+
 	var totalPlayers int64
 	if err := h.db.Model(&models.Player{}).Count(&totalPlayers).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -34,4 +40,23 @@ func (h *Handler) AdminDashboard(c echo.Context) error {
 		ActivePlayers: activePlayers,
 		SyncStatus:    h.syncStatus.Snapshot(),
 	})
+}
+
+func validAdminAuthorization(headerValue, adminSecret string) bool {
+	if adminSecret == "" {
+		return false
+	}
+
+	const bearerPrefix = "Bearer "
+
+	if !strings.HasPrefix(headerValue, bearerPrefix) {
+		return false
+	}
+
+	token := strings.TrimSpace(strings.TrimPrefix(headerValue, bearerPrefix))
+	if token == "" {
+		return false
+	}
+
+	return subtle.ConstantTimeCompare([]byte(token), []byte(adminSecret)) == 1
 }

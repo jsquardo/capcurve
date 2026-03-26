@@ -13,6 +13,7 @@ type Config struct {
 	Port         string
 	Env          string
 	JWTSecret    string
+	AdminSecret  string
 	SyncEnabled  bool
 	SyncHour     int
 	SyncMinute   int
@@ -30,6 +31,7 @@ func Load() *Config {
 		Port:         getEnv("PORT", "8080"),
 		Env:          getEnv("ENV", "development"),
 		JWTSecret:    getEnv("JWT_SECRET", "dev_secret_change_in_production"),
+		AdminSecret:  getEnv("ADMIN_SECRET", ""),
 		SyncEnabled:  getEnvBool("SYNC_ENABLED", true),
 		SyncHour:     getEnvInt("SYNC_HOUR", 5),
 		SyncMinute:   getEnvInt("SYNC_MINUTE", 0),
