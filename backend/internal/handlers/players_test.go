@@ -96,6 +96,87 @@ func TestListPlayersEndpoint(t *testing.T) {
 		},
 	})
 
+	teamPrefix := fmt.Sprintf("CodexTeam%d", nowSuffix)
+	teamByName := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     910600000 + int(nowSuffix%100000),
+		FirstName: teamPrefix,
+		LastName:  "NameMatch",
+		Position:  "OF",
+		Active:    true,
+		Season: &testSeasonFixture{
+			Year:       2025,
+			TeamID:     147,
+			TeamName:   "New York Yankees",
+			Age:        29,
+			ValueScore: 54.3,
+		},
+	})
+	teamByID := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     910700000 + int(nowSuffix%100000),
+		FirstName: teamPrefix,
+		LastName:  "IDMatch",
+		Position:  "2B",
+		Active:    true,
+		Season: &testSeasonFixture{
+			Year:       2025,
+			TeamID:     147,
+			TeamName:   "NY Snapshot Alias",
+			Age:        27,
+			ValueScore: 49.1,
+		},
+	})
+	_ = createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     910800000 + int(nowSuffix%100000),
+		FirstName: teamPrefix,
+		LastName:  "Miss",
+		Position:  "3B",
+		Active:    true,
+		Season: &testSeasonFixture{
+			Year:       2025,
+			TeamID:     121,
+			TeamName:   "New York Mets",
+			Age:        26,
+			ValueScore: 47.7,
+		},
+	})
+
+	seasonPrefix := fmt.Sprintf("CodexSeason%d", nowSuffix)
+	seasonScoped := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     910900000 + int(nowSuffix%100000),
+		FirstName: seasonPrefix,
+		LastName:  "Switch",
+		Position:  "SS",
+		Active:    true,
+		Season: &testSeasonFixture{
+			Year:       2025,
+			TeamID:     119,
+			TeamName:   "Los Angeles Dodgers",
+			Age:        31,
+			ValueScore: 90.5,
+		},
+	})
+	createTestSeasonStat(t, db, seasonScoped.ID, testSeasonFixture{
+		Year:       2024,
+		TeamID:     111,
+		TeamName:   "Boston Red Sox",
+		Age:        30,
+		ValueScore: 70.2,
+	})
+	_ = createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     911000000 + int(nowSuffix%100000),
+		FirstName: seasonPrefix,
+		LastName:  "OtherYear",
+		Position:  "1B",
+		Active:    true,
+		Season: &testSeasonFixture{
+			Year:       2025,
+			TeamID:     138,
+			TeamName:   "St. Louis Cardinals",
+			Age:        28,
+			ValueScore: 55.5,
+		},
+	})
+
 	t.Cleanup(func() {
 		cleanupTestPlayers(t, db, []int{
 			searchA.MLBID,
@@ -104,6 +185,11 @@ func TestListPlayersEndpoint(t *testing.T) {
 			910300000 + int(nowSuffix%100000),
 			910400000 + int(nowSuffix%100000),
 			910500000 + int(nowSuffix%100000),
+			teamByName.MLBID,
+			teamByID.MLBID,
+			910800000 + int(nowSuffix%100000),
+			seasonScoped.MLBID,
+			911000000 + int(nowSuffix%100000),
 		})
 	})
 
@@ -139,6 +225,43 @@ func TestListPlayersEndpoint(t *testing.T) {
 		require.Equal(t, 88.8, response.Data[0].LatestSeason.ValueScore)
 		require.Equal(t, "Low", response.Data[1].LastName)
 		require.Equal(t, 12.5, response.Data[1].LatestSeason.ValueScore)
+	})
+
+	t.Run("team filter matches the joined snapshot by team name and numeric team id", func(t *testing.T) {
+		byName := hitListPlayersEndpoint(t, db, "/api/v1/players?q="+teamPrefix+"&team=Yankees")
+
+		require.Equal(t, 1, byName.Meta.Count)
+		require.Len(t, byName.Data, 1)
+		require.Equal(t, "NameMatch", byName.Data[0].LastName)
+		require.NotNil(t, byName.Data[0].LatestSeason)
+		require.Equal(t, 147, byName.Data[0].LatestSeason.TeamID)
+		require.Equal(t, "New York Yankees", byName.Data[0].LatestSeason.TeamName)
+
+		byID := hitListPlayersEndpoint(t, db, "/api/v1/players?q="+teamPrefix+"&team=147")
+
+		require.Equal(t, 2, byID.Meta.Count)
+		require.Len(t, byID.Data, 2)
+		require.Equal(t, "IDMatch", byID.Data[0].LastName)
+		require.Equal(t, "NameMatch", byID.Data[1].LastName)
+		for _, item := range byID.Data {
+			require.NotNil(t, item.LatestSeason)
+			require.Equal(t, 147, item.LatestSeason.TeamID)
+		}
+	})
+
+	t.Run("season filter swaps latest season snapshot to the requested year", func(t *testing.T) {
+		response := hitListPlayersEndpoint(t, db, "/api/v1/players?q="+seasonPrefix+"&season=2024")
+
+		require.Equal(t, 2, response.Meta.Count)
+		require.Len(t, response.Data, 2)
+		require.Equal(t, "OtherYear", response.Data[0].LastName)
+		require.Nil(t, response.Data[0].LatestSeason)
+		require.Equal(t, "Switch", response.Data[1].LastName)
+		require.NotNil(t, response.Data[1].LatestSeason)
+		require.Equal(t, 2024, response.Data[1].LatestSeason.Year)
+		require.Equal(t, 111, response.Data[1].LatestSeason.TeamID)
+		require.Equal(t, "Boston Red Sox", response.Data[1].LatestSeason.TeamName)
+		require.Equal(t, 70.2, response.Data[1].LatestSeason.ValueScore)
 	})
 }
 
@@ -190,19 +313,25 @@ func createTestPlayer(t *testing.T, db *gorm.DB, fixture testPlayerFixture) mode
 	}
 
 	if fixture.Season != nil {
-		season := models.SeasonStat{
-			PlayerID:    int(player.ID),
-			Year:        fixture.Season.Year,
-			TeamID:      fixture.Season.TeamID,
-			TeamName:    fixture.Season.TeamName,
-			Age:         fixture.Season.Age,
-			ValueScore:  fixture.Season.ValueScore,
-			GamesPlayed: 1,
-		}
-		require.NoError(t, db.Create(&season).Error)
+		createTestSeasonStat(t, db, player.ID, *fixture.Season)
 	}
 
 	return player
+}
+
+func createTestSeasonStat(t *testing.T, db *gorm.DB, playerID uint, fixture testSeasonFixture) {
+	t.Helper()
+
+	season := models.SeasonStat{
+		PlayerID:    int(playerID),
+		Year:        fixture.Year,
+		TeamID:      fixture.TeamID,
+		TeamName:    fixture.TeamName,
+		Age:         fixture.Age,
+		ValueScore:  fixture.ValueScore,
+		GamesPlayed: 1,
+	}
+	require.NoError(t, db.Create(&season).Error)
 }
 
 func cleanupTestPlayers(t *testing.T, db *gorm.DB, mlbIDs []int) {

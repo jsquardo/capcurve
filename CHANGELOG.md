@@ -1,6 +1,22 @@
 ## [2026-03-26] — Session Summary
 
 ### Added
+- Added backend integration coverage for `GET /api/v1/players?team=...`, including both joined `team_name` substring matching and numeric `team_id` matching
+- Added backend integration coverage for `GET /api/v1/players?season=<year>` so the fixed-year season snapshot branch is explicitly exercised
+
+### Changed
+- Refactored handler test fixtures to support creating multiple `season_stats` rows for one player when list-endpoint snapshot behavior needs to be verified
+- Updated `AGENTS.md` Current State so the completed test coverage and the remaining legacy `/players/search` decision are both recorded for the next session
+
+### Fixed
+- Locked in regression coverage for the player-list snapshot contract so future query changes are less likely to break `team` filtering or year-scoped snapshot shaping silently
+
+### Notes
+- Verified with `make test`
+
+## [2026-03-26] — Session Summary
+
+### Added
 - Added a compact `GET /api/v1/players` response envelope with `data` and `meta` sections for list consumers
 - Added backend endpoint coverage for `q`, `active`, and `sort=-value_score` on the real `/api/v1/players` route
 
