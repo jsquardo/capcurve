@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/jsquardo/capcurve/internal/syncjob"
+	appmiddleware "github.com/jsquardo/capcurve/internal/middleware"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -11,7 +12,7 @@ func RegisterRoutes(e *echo.Echo, db *gorm.DB, syncStatus *syncjob.StatusStore, 
 
 	e.GET("/health", h.HealthCheck)
 
-	api := e.Group("/api/v1")
+	api := e.Group("/api/v1", appmiddleware.CORS())
 	api.GET("/admin/dashboard", h.AdminDashboard)
 
 	players := api.Group("/players")

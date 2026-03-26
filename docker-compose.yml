@@ -23,6 +23,8 @@ services:
       dockerfile: Dockerfile.dev
     container_name: capcurve_backend
     restart: unless-stopped
+    env_file:
+      - .env
     depends_on:
       db:
         condition: service_healthy
@@ -45,6 +47,8 @@ services:
       dockerfile: Dockerfile.dev
     container_name: capcurve_frontend
     restart: unless-stopped
+    env_file:
+      - .env
     depends_on:
       - backend
     environment:

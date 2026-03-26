@@ -15,7 +15,7 @@ func CORS() echo.MiddlewareFunc {
 			echo.HeaderOrigin,
 			echo.HeaderContentType,
 			echo.HeaderAccept,
-			echo.HeaderAuthorization,
+			"Authorization",
 		},
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 	})

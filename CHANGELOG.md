@@ -1,6 +1,37 @@
 ## [2026-03-26] — Session Summary
 
 ### Added
+- Added frontend build verification for the admin dashboard API path fix via `docker compose exec frontend npm run build`
+
+### Changed
+- Updated the frontend API client to normalize `VITE_API_URL` to the versioned `/api/v1` base before issuing requests
+- Updated `AGENTS.md` Current State so the next session still resumes with Phase 2 player endpoint work after this frontend fix
+
+### Fixed
+- Fixed the admin dashboard frontend request so it targets `GET /api/v1/admin/dashboard` instead of falling back to the stale unversioned `/api` base
+
+### Notes
+- Verified with `make test`
+- Verified frontend build with `docker compose exec frontend npm run build`
+
+## [2026-03-26] — Session Summary
+
+### Added
+- Added backend regression coverage for the admin dashboard `OPTIONS` preflight so `/api/v1/admin/dashboard` now has explicit CORS-header test coverage
+
+### Changed
+- Updated backend route registration to attach the shared CORS middleware to the `/api/v1` Echo group that owns the admin dashboard endpoint
+- Updated `AGENTS.md` Current State so the next session still resumes with Phase 2 player endpoint work after this regression fix
+
+### Fixed
+- Fixed the admin dashboard CORS regression where the browser preflight returned `204` without any `Access-Control-Allow-*` headers
+
+### Notes
+- Verified with `make test`
+
+## [2026-03-26] — Session Summary
+
+### Added
 - Added backend regression tests covering admin bearer-token validation and unauthorized dashboard requests
 - Added root `.env` entries for `ADMIN_SECRET` and `VITE_ADMIN_SECRET` to support the new local admin dashboard access flow
 

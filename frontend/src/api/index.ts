@@ -1,7 +1,11 @@
 import axios from 'axios'
 import type { Player, CareerArcResponse, Contract, AdminDashboard } from '@/types'
 
-const apiBaseURL = import.meta.env.VITE_API_URL ?? '/api/v1'
+const ensureVersionedApiBaseURL = (baseURL: string): string => {
+  return baseURL.replace(/\/api\/?$/, '/api/v1')
+}
+
+const apiBaseURL = ensureVersionedApiBaseURL(import.meta.env.VITE_API_URL ?? '/api/v1')
 const adminSecret = import.meta.env.VITE_ADMIN_SECRET
 
 const api = axios.create({
