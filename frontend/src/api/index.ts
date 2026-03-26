@@ -1,5 +1,12 @@
 import axios from 'axios'
-import type { Player, CareerArcResponse, Contract, AdminDashboard } from '@/types'
+import type {
+  Player,
+  PlayerListItem,
+  PlayerListResponse,
+  CareerArcResponse,
+  Contract,
+  AdminDashboard,
+} from '@/types'
 
 const ensureVersionedApiBaseURL = (baseURL: string): string => {
   return baseURL.replace(/\/api\/?$/, '/api/v1')
@@ -13,9 +20,9 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-export const searchPlayers = async (query: string): Promise<Player[]> => {
-  const { data } = await api.get('/players/search', { params: { q: query } })
-  return data
+export const searchPlayers = async (query: string): Promise<PlayerListItem[]> => {
+  const { data } = await api.get<PlayerListResponse>('/players', { params: { q: query } })
+  return data.data
 }
 
 export const getPlayer = async (id: number): Promise<Player> => {
@@ -23,9 +30,9 @@ export const getPlayer = async (id: number): Promise<Player> => {
   return data
 }
 
-export const listPlayers = async (params?: { active?: boolean; position?: string }): Promise<Player[]> => {
-  const { data } = await api.get('/players', { params })
-  return data
+export const listPlayers = async (params?: { active?: boolean; position?: string }): Promise<PlayerListItem[]> => {
+  const { data } = await api.get<PlayerListResponse>('/players', { params })
+  return data.data
 }
 
 export const getCareerArc = async (playerId: number): Promise<CareerArcResponse> => {

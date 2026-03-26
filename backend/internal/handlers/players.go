@@ -120,23 +120,6 @@ func (h *Handler) GetPlayer(c echo.Context) error {
 	return c.JSON(http.StatusOK, player)
 }
 
-func (h *Handler) SearchPlayers(c echo.Context) error {
-	query := c.QueryParam("q")
-	if query == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "search query required"})
-	}
-
-	var players []models.Player
-	searchTerm := "%" + query + "%"
-	if err := h.db.Where(
-		"first_name ILIKE ? OR last_name ILIKE ? OR (first_name || ' ' || last_name) ILIKE ?",
-		searchTerm, searchTerm, searchTerm,
-	).Limit(20).Find(&players).Error; err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-	return c.JSON(http.StatusOK, players)
-}
-
 type playerListParams struct {
 	Query    string
 	Active   *bool

@@ -14,6 +14,41 @@ export interface Player {
   career_arc?: CareerArc
 }
 
+export interface PlayerListSeason {
+  year: number
+  team_id: number
+  team_name: string
+  age: number
+  value_score: number
+}
+
+export interface PlayerListItem {
+  id: number
+  mlb_id: number
+  first_name: string
+  last_name: string
+  full_name: string
+  position: string
+  bats: string
+  throws: string
+  date_of_birth: string | null
+  active: boolean
+  image_url: string
+  latest_season: PlayerListSeason | null
+}
+
+export interface PlayerListMeta {
+  limit: number
+  offset: number
+  count: number
+  total: number
+}
+
+export interface PlayerListResponse {
+  data: PlayerListItem[]
+  meta: PlayerListMeta
+}
+
 export interface SeasonStat {
   id: number
   player_id: number

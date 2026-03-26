@@ -1,6 +1,23 @@
 ## [2026-03-26] — Session Summary
 
 ### Added
+- Added frontend TypeScript types for the player-list response envelope, including list rows, joined latest-season snapshot data, and pagination metadata
+
+### Changed
+- Updated the frontend player-search helper to call `GET /api/v1/players?q=...` and unwrap the new `{ data, meta }` response shape
+- Updated the frontend list helper to unwrap the same typed list-response envelope instead of assuming a raw array
+- Updated `AGENTS.md` Current State so the removed legacy search route and the successful frontend build are recorded for the next session
+
+### Fixed
+- Removed the legacy `GET /api/v1/players/search` backend route and handler now that the frontend no longer depends on them
+
+### Notes
+- Verified with `make test`
+- Verified frontend build with `docker compose exec frontend npm run build`
+
+## [2026-03-26] — Session Summary
+
+### Added
 - Added backend integration coverage for `GET /api/v1/players?team=...`, including both joined `team_name` substring matching and numeric `team_id` matching
 - Added backend integration coverage for `GET /api/v1/players?season=<year>` so the fixed-year season snapshot branch is explicitly exercised
 
