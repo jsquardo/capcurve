@@ -1,3 +1,20 @@
+## [2026-03-27] — Session Summary
+
+### Added
+- Added a typed `GET /api/v1/players/:id` response envelope with full `career_stats` history and explicit `hitting` / `pitching` sub-objects per season
+- Added backend integration coverage for player detail with season history, no-history players, two-way seasons, and unknown-player `404` responses
+
+### Changed
+- Updated the player detail handler to derive `latest_season` from the final `year ASC` season row already loaded for the response instead of issuing a separate lookup
+- Updated season-detail shaping to treat workload presence (`plate_appearances`, `innings_pitched`) as the source of truth for whether hitting or pitching data should be returned
+- Updated `AGENTS.md` Current State so the next session moves to reshaping `GET /api/v1/players/:id/career-arc`
+
+### Fixed
+- Removed the raw GORM preload response from `GET /api/v1/players/:id` so the endpoint no longer leaks contracts and unrelated model structure into the player-detail API surface
+
+### Notes
+- Verified with `make test`
+
 ## [2026-03-26] — Session Summary
 
 ### Added
