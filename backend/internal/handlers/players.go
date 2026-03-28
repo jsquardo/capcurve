@@ -69,6 +69,10 @@ type playerDetailResponse struct {
 	Data playerDetailItem `json:"data"`
 }
 
+type careerArcResponse struct {
+	Data careerArcData `json:"data"`
+}
+
 type playerDetailItem struct {
 	ID           uint                   `json:"id"`
 	MLBID        int                    `json:"mlb_id"`
@@ -85,6 +89,27 @@ type playerDetailItem struct {
 	CareerStats  []playerCareerStatItem `json:"career_stats"`
 }
 
+type careerArcData struct {
+	Player     careerArcPlayerItem     `json:"player"`
+	Arc        *careerArcMetadata      `json:"arc"`
+	Timeline   []careerArcTimelineItem `json:"timeline"`
+	Projection careerArcProjection     `json:"projection"`
+}
+
+type careerArcPlayerItem struct {
+	ID          uint       `json:"id"`
+	MLBID       int        `json:"mlb_id"`
+	FirstName   string     `json:"first_name"`
+	LastName    string     `json:"last_name"`
+	FullName    string     `json:"full_name"`
+	Position    string     `json:"position"`
+	Bats        string     `json:"bats"`
+	Throws      string     `json:"throws"`
+	DateOfBirth *time.Time `json:"date_of_birth"`
+	Active      bool       `json:"active"`
+	ImageURL    string     `json:"image_url"`
+}
+
 type playerCareerStatItem struct {
 	Year       int                  `json:"year"`
 	TeamID     int                  `json:"team_id"`
@@ -93,6 +118,28 @@ type playerCareerStatItem struct {
 	ValueScore float64              `json:"value_score"`
 	Hitting    *playerHittingStats  `json:"hitting"`
 	Pitching   *playerPitchingStats `json:"pitching"`
+}
+
+type careerArcTimelineItem struct {
+	Year         int                  `json:"year"`
+	TeamID       int                  `json:"team_id"`
+	TeamName     string               `json:"team_name"`
+	Age          int                  `json:"age"`
+	ValueScore   float64              `json:"value_score"`
+	IsPeak       bool                 `json:"is_peak"`
+	IsProjection bool                 `json:"is_projection"`
+	Hitting      *playerHittingStats  `json:"hitting"`
+	Pitching     *playerPitchingStats `json:"pitching"`
+}
+
+type careerArcMetadata struct {
+	PeakYearStart         int       `json:"peak_year_start"`
+	PeakYearEnd           int       `json:"peak_year_end"`
+	DeclineOnsetYear      int       `json:"decline_onset_year"`
+	ArcShape              string    `json:"arc_shape"`
+	PeakValueScore        float64   `json:"peak_value_score"`
+	CareerValueScoreTotal float64   `json:"career_value_score_total"`
+	LastComputedAt        time.Time `json:"last_computed_at"`
 }
 
 type playerHittingStats struct {
@@ -141,6 +188,35 @@ type playerPitchingStats struct {
 	StrikeoutWalkRatio float64  `json:"strikeout_walk_ratio"`
 	StrikePercentage   float64  `json:"strike_percentage"`
 	ExpectedERA        *float64 `json:"expected_era"`
+}
+
+type careerArcProjection struct {
+	Status         string                      `json:"status"`
+	Eligible       bool                        `json:"eligible"`
+	Reason         string                      `json:"reason"`
+	Points         []careerArcProjectionPoint  `json:"points"`
+	ConfidenceBand []careerArcConfidenceBand   `json:"confidence_band"`
+	Comparables    []careerArcComparablePlayer `json:"comparables"`
+}
+
+type careerArcProjectionPoint struct {
+	Year         int     `json:"year"`
+	Age          int     `json:"age"`
+	ValueScore   float64 `json:"value_score"`
+	IsProjection bool    `json:"is_projection"`
+}
+
+type careerArcConfidenceBand struct {
+	Year  int     `json:"year"`
+	Lower float64 `json:"lower"`
+	Upper float64 `json:"upper"`
+}
+
+type careerArcComparablePlayer struct {
+	PlayerID uint   `json:"player_id"`
+	MLBID    int    `json:"mlb_id"`
+	FullName string `json:"full_name"`
+	Position string `json:"position"`
 }
 
 func (h *Handler) ListPlayers(c echo.Context) error {
@@ -193,7 +269,11 @@ func (h *Handler) GetPlayer(c echo.Context) error {
 
 	var player models.Player
 	if err := h.db.First(&player, id).Error; err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "player not found"})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "player not found"})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	var seasonStats []models.SeasonStat
@@ -510,6 +590,20 @@ func newPlayerDetailItem(player models.Player, seasonStats []models.SeasonStat) 
 	return item
 }
 
+func newCareerArcData(player models.Player, seasonStats []models.SeasonStat, arc *models.CareerArc) careerArcData {
+	timeline := make([]careerArcTimelineItem, 0, len(seasonStats))
+	for _, stat := range seasonStats {
+		timeline = append(timeline, newCareerArcTimelineItem(stat, arc))
+	}
+
+	return careerArcData{
+		Player:     newCareerArcPlayerItem(player),
+		Arc:        newCareerArcMetadata(arc, timeline),
+		Timeline:   timeline,
+		Projection: newCareerArcProjection(player.Active),
+	}
+}
+
 func newPlayerCareerStatItem(stat models.SeasonStat) playerCareerStatItem {
 	return playerCareerStatItem{
 		Year:       stat.Year,
@@ -520,6 +614,112 @@ func newPlayerCareerStatItem(stat models.SeasonStat) playerCareerStatItem {
 		Hitting:    newPlayerHittingStats(stat),
 		Pitching:   newPlayerPitchingStats(stat),
 	}
+}
+
+func newCareerArcPlayerItem(player models.Player) careerArcPlayerItem {
+	return careerArcPlayerItem{
+		ID:          player.ID,
+		MLBID:       player.MLBID,
+		FirstName:   player.FirstName,
+		LastName:    player.LastName,
+		FullName:    strings.TrimSpace(player.FirstName + " " + player.LastName),
+		Position:    player.Position,
+		Bats:        player.Bats,
+		Throws:      player.Throws,
+		DateOfBirth: player.DateOfBirth,
+		Active:      player.Active,
+		ImageURL:    player.ImageURL,
+	}
+}
+
+func newCareerArcTimelineItem(stat models.SeasonStat, arc *models.CareerArc) careerArcTimelineItem {
+	detail := newPlayerCareerStatItem(stat)
+
+	return careerArcTimelineItem{
+		Year:         detail.Year,
+		TeamID:       detail.TeamID,
+		TeamName:     detail.TeamName,
+		Age:          detail.Age,
+		ValueScore:   detail.ValueScore,
+		IsPeak:       isPeakSeason(detail.Year, arc),
+		IsProjection: false,
+		Hitting:      detail.Hitting,
+		Pitching:     detail.Pitching,
+	}
+}
+
+func newCareerArcMetadata(arc *models.CareerArc, timeline []careerArcTimelineItem) *careerArcMetadata {
+	if arc == nil {
+		return nil
+	}
+
+	return &careerArcMetadata{
+		PeakYearStart:         arc.PeakYearStart,
+		PeakYearEnd:           arc.PeakYearEnd,
+		DeclineOnsetYear:      arcDeclineOnsetYear(arc),
+		ArcShape:              arc.ArcShape,
+		PeakValueScore:        peakTimelineValueScore(timeline),
+		CareerValueScoreTotal: totalTimelineValueScore(timeline),
+		LastComputedAt:        arc.LastComputedAt,
+	}
+}
+
+func isPeakSeason(year int, arc *models.CareerArc) bool {
+	if arc == nil || arc.PeakYearStart == 0 || arc.PeakYearEnd == 0 {
+		return false
+	}
+
+	return year >= arc.PeakYearStart && year <= arc.PeakYearEnd
+}
+
+func arcDeclineOnsetYear(arc *models.CareerArc) int {
+	if arc == nil {
+		return 0
+	}
+
+	return arc.DeclineOnsetYear
+}
+
+func peakTimelineValueScore(timeline []careerArcTimelineItem) float64 {
+	if len(timeline) == 0 {
+		return 0
+	}
+
+	peak := timeline[0].ValueScore
+	for _, point := range timeline[1:] {
+		if point.ValueScore > peak {
+			peak = point.ValueScore
+		}
+	}
+
+	return peak
+}
+
+func totalTimelineValueScore(timeline []careerArcTimelineItem) float64 {
+	var total float64
+	for _, point := range timeline {
+		total += point.ValueScore
+	}
+
+	return total
+}
+
+func newCareerArcProjection(active bool) careerArcProjection {
+	projection := careerArcProjection{
+		Status:         "pending",
+		Eligible:       active,
+		Points:         []careerArcProjectionPoint{},
+		ConfidenceBand: []careerArcConfidenceBand{},
+		Comparables:    []careerArcComparablePlayer{},
+	}
+
+	if active {
+		projection.Reason = "projection engine not implemented yet"
+		return projection
+	}
+
+	projection.Reason = "projections are only available for active players"
+	return projection
 }
 
 func newPlayerHittingStats(stat models.SeasonStat) *playerHittingStats {
@@ -588,17 +788,34 @@ func (h *Handler) GetCareerArc(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid player id"})
 	}
 
-	var arc models.CareerArc
-	if err := h.db.Where("player_id = ?", playerID).First(&arc).Error; err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "career arc not found"})
+	var player models.Player
+	if err := h.db.First(&player, playerID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "player not found"})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	var stats []models.SeasonStat
-	h.db.Where("player_id = ?", playerID).Order("year ASC").Find(&stats)
+	if err := h.db.Where("player_id = ?", player.ID).Order("year ASC, id ASC").Find(&stats).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"arc":          arc,
-		"season_stats": stats,
+	var arc *models.CareerArc
+	var arcRecord models.CareerArc
+	if err := h.db.Where("player_id = ?", player.ID).First(&arcRecord).Error; err != nil {
+		// Missing arc metadata should not block the chart endpoint from returning
+		// the player's historical timeline.
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+	} else {
+		arc = &arcRecord
+	}
+
+	return c.JSON(http.StatusOK, careerArcResponse{
+		Data: newCareerArcData(player, stats, arc),
 	})
 }
 

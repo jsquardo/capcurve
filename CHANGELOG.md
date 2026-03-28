@@ -1,6 +1,25 @@
 ## [2026-03-27] — Session Summary
 
 ### Added
+- Added a deliberate `GET /api/v1/players/:id/career-arc` response envelope with `player`, optional `arc`, chart-ready `timeline`, and `projection` placeholder sections
+- Added backend integration coverage for the career-arc endpoint covering arc-backed responses, players with history but no `career_arcs` row, two-way timeline rows, invalid ids, and missing players
+- Added backend integration coverage for `GET /api/v1/players/:id` invalid-id and forced database-failure paths
+
+### Changed
+- Updated `GET /api/v1/players/:id/career-arc` to reuse the player-detail season shaping helpers so chart timeline rows return the same `hitting` / `pitching` structure and workload-based nullability
+- Updated career-arc metadata shaping to derive `peak_value_score` and `career_value_score_total` from the loaded historical timeline instead of requiring schema changes
+- Updated `AGENTS.md` Current State so the next session moves to implementing `GET /api/v1/players/:id/projection`
+
+### Fixed
+- Fixed `GET /api/v1/players/:id` so only `gorm.ErrRecordNotFound` returns `404`, while real database/query failures now return `500`
+- Fixed `GET /api/v1/players/:id/career-arc` so a missing `career_arcs` row no longer incorrectly returns `404`; existing players now get `200` with `"arc": null`
+
+### Notes
+- Verified with `make test`
+
+## [2026-03-27] — Session Summary
+
+### Added
 - Added a typed `GET /api/v1/players/:id` response envelope with full `career_stats` history and explicit `hitting` / `pitching` sub-objects per season
 - Added backend integration coverage for player detail with season history, no-history players, two-way seasons, and unknown-player `404` responses
 

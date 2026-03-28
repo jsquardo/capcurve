@@ -429,6 +429,7 @@ func cleanupTestPlayers(t *testing.T, db *gorm.DB, mlbIDs []int) {
 		playerIDs = append(playerIDs, player.ID)
 	}
 
+	require.NoError(t, db.Unscoped().Where("player_id IN ?", playerIDs).Delete(&models.CareerArc{}).Error)
 	require.NoError(t, db.Unscoped().Where("player_id IN ?", playerIDs).Delete(&models.SeasonStat{}).Error)
 	require.NoError(t, db.Unscoped().Where("id IN ?", playerIDs).Delete(&models.Player{}).Error)
 }
@@ -528,6 +529,82 @@ type playerDetailPitchingStats struct {
 	StrikeoutWalkRatio float64  `json:"strikeout_walk_ratio"`
 	StrikePercentage   float64  `json:"strike_percentage"`
 	ExpectedERA        *float64 `json:"expected_era"`
+}
+
+type careerArcTestResponse struct {
+	Data careerArcTestData `json:"data"`
+}
+
+type careerArcTestData struct {
+	Player     careerArcTestPlayer      `json:"player"`
+	Arc        *careerArcTestMetadata   `json:"arc"`
+	Timeline   []careerArcTestTimeline  `json:"timeline"`
+	Projection careerArcTestProjection  `json:"projection"`
+}
+
+type careerArcTestPlayer struct {
+	ID          uint       `json:"id"`
+	MLBID       int        `json:"mlb_id"`
+	FirstName   string     `json:"first_name"`
+	LastName    string     `json:"last_name"`
+	FullName    string     `json:"full_name"`
+	Position    string     `json:"position"`
+	Bats        string     `json:"bats"`
+	Throws      string     `json:"throws"`
+	DateOfBirth *time.Time `json:"date_of_birth"`
+	Active      bool       `json:"active"`
+	ImageURL    string     `json:"image_url"`
+}
+
+type careerArcTestMetadata struct {
+	PeakYearStart         int       `json:"peak_year_start"`
+	PeakYearEnd           int       `json:"peak_year_end"`
+	DeclineOnsetYear      int       `json:"decline_onset_year"`
+	ArcShape              string    `json:"arc_shape"`
+	PeakValueScore        float64   `json:"peak_value_score"`
+	CareerValueScoreTotal float64   `json:"career_value_score_total"`
+	LastComputedAt        time.Time `json:"last_computed_at"`
+}
+
+type careerArcTestTimeline struct {
+	Year         int                        `json:"year"`
+	TeamID       int                        `json:"team_id"`
+	TeamName     string                     `json:"team_name"`
+	Age          int                        `json:"age"`
+	ValueScore   float64                    `json:"value_score"`
+	IsPeak       bool                       `json:"is_peak"`
+	IsProjection bool                       `json:"is_projection"`
+	Hitting      *playerDetailHittingStats  `json:"hitting"`
+	Pitching     *playerDetailPitchingStats `json:"pitching"`
+}
+
+type careerArcTestProjection struct {
+	Status         string                           `json:"status"`
+	Eligible       bool                             `json:"eligible"`
+	Reason         string                           `json:"reason"`
+	Points         []careerArcTestProjectionPoint   `json:"points"`
+	ConfidenceBand []careerArcTestConfidenceBand    `json:"confidence_band"`
+	Comparables    []careerArcTestComparablePlayer  `json:"comparables"`
+}
+
+type careerArcTestProjectionPoint struct {
+	Year         int     `json:"year"`
+	Age          int     `json:"age"`
+	ValueScore   float64 `json:"value_score"`
+	IsProjection bool    `json:"is_projection"`
+}
+
+type careerArcTestConfidenceBand struct {
+	Year  int     `json:"year"`
+	Lower float64 `json:"lower"`
+	Upper float64 `json:"upper"`
+}
+
+type careerArcTestComparablePlayer struct {
+	PlayerID uint   `json:"player_id"`
+	MLBID    int    `json:"mlb_id"`
+	FullName string `json:"full_name"`
+	Position string `json:"position"`
 }
 
 func TestGetPlayerEndpoint(t *testing.T) {
@@ -717,6 +794,230 @@ func TestGetPlayerEndpoint(t *testing.T) {
 		require.Equal(t, http.StatusNotFound, rec.Code)
 		require.JSONEq(t, `{"error":"player not found"}`, rec.Body.String())
 	})
+
+	t.Run("returns 400 when the player id is not numeric", func(t *testing.T) {
+		rec := hitPlayerEndpointRaw(t, db, "/api/v1/players/abc")
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.JSONEq(t, `{"error":"invalid player id"}`, rec.Body.String())
+	})
+
+	t.Run("returns 500 when the player lookup fails for a database error", func(t *testing.T) {
+		failingDB := testHandlersDB(t)
+		sqlDB, err := failingDB.DB()
+		require.NoError(t, err)
+		require.NoError(t, sqlDB.Close())
+
+		rec := hitPlayerEndpointRaw(t, failingDB, "/api/v1/players/1")
+
+		require.Equal(t, http.StatusInternalServerError, rec.Code)
+		require.Contains(t, rec.Body.String(), `"error":`)
+	})
+}
+
+func TestGetCareerArcEndpoint(t *testing.T) {
+	db := testHandlersDB(t)
+	nowSuffix := time.Now().UnixNano()
+
+	withArc := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     911400000 + int(nowSuffix%100000),
+		FirstName: fmt.Sprintf("CodexArc%d", nowSuffix),
+		LastName:  "Summary",
+		Position:  "OF",
+		Active:    true,
+	})
+	createTestSeasonStat(t, db, withArc.ID, testSeasonFixture{
+		Year:             2022,
+		TeamID:           141,
+		TeamName:         "Toronto Blue Jays",
+		Age:              24,
+		ValueScore:       48.2,
+		GamesPlayed:      130,
+		PlateAppearances: 520,
+		AtBats:           470,
+		Hits:             141,
+		HomeRuns:         19,
+		OBP:              0.351,
+		SLG:              0.472,
+	})
+	createTestSeasonStat(t, db, withArc.ID, testSeasonFixture{
+		Year:             2023,
+		TeamID:           141,
+		TeamName:         "Toronto Blue Jays",
+		Age:              25,
+		ValueScore:       67.9,
+		GamesPlayed:      145,
+		PlateAppearances: 610,
+		AtBats:           548,
+		Hits:             169,
+		HomeRuns:         31,
+		OBP:              0.381,
+		SLG:              0.544,
+	})
+	createTestSeasonStat(t, db, withArc.ID, testSeasonFixture{
+		Year:             2024,
+		TeamID:           141,
+		TeamName:         "Toronto Blue Jays",
+		Age:              26,
+		ValueScore:       58.6,
+		GamesPlayed:      138,
+		PlateAppearances: 592,
+		AtBats:           530,
+		Hits:             156,
+		HomeRuns:         24,
+		OBP:              0.366,
+		SLG:              0.501,
+	})
+
+	lastComputedAt := time.Date(2026, 3, 27, 12, 0, 0, 0, time.UTC)
+	require.NoError(t, db.Create(&models.CareerArc{
+		PlayerID:         int(withArc.ID),
+		PeakYearStart:    2023,
+		PeakYearEnd:      2023,
+		PeakWAR:          0,
+		CareerWAR:        0,
+		DeclineOnsetYear: 2025,
+		ArcShape:         "Peak Prime",
+		LastComputedAt:   lastComputedAt,
+	}).Error)
+
+	noArc := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     911500000 + int(nowSuffix%100000),
+		FirstName: fmt.Sprintf("CodexArc%d", nowSuffix),
+		LastName:  "Pending",
+		Position:  "SS",
+		Active:    true,
+	})
+	createTestSeasonStat(t, db, noArc.ID, testSeasonFixture{
+		Year:             2024,
+		TeamID:           147,
+		TeamName:         "New York Yankees",
+		Age:              27,
+		ValueScore:       52.4,
+		GamesPlayed:      142,
+		PlateAppearances: 598,
+		AtBats:           540,
+		Hits:             158,
+		HomeRuns:         17,
+		OBP:              0.349,
+		SLG:              0.451,
+	})
+
+	twoWayExpectedWOBA := 0.401
+	twoWayExpectedERA := 3.42
+	twoWay := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     911600000 + int(nowSuffix%100000),
+		FirstName: fmt.Sprintf("CodexArc%d", nowSuffix),
+		LastName:  "TwoWay",
+		Position:  "DH",
+		Active:    true,
+	})
+	createTestSeasonStat(t, db, twoWay.ID, testSeasonFixture{
+		Year:               2025,
+		TeamID:             119,
+		TeamName:           "Los Angeles Dodgers",
+		Age:                30,
+		ValueScore:         89.4,
+		GamesPlayed:        148,
+		GamesStarted:       21,
+		PlateAppearances:   612,
+		AtBats:             549,
+		Hits:               166,
+		HomeRuns:           39,
+		OBP:                0.372,
+		SLG:                0.581,
+		InningsPitched:     128.2,
+		Wins:               11,
+		Losses:             4,
+		ERA:                3.11,
+		WHIP:               1.09,
+		HitsAllowed:        97,
+		WalksAllowed:       39,
+		HomeRunsAllowed:    11,
+		StrikeoutsPer9:     11.4,
+		WalksPer9:          2.7,
+		HitsPer9:           6.8,
+		HomeRunsPer9:       0.8,
+		StrikeoutWalkRatio: 4.18,
+		StrikePercentage:   66.8,
+		ExpectedWOBA:       &twoWayExpectedWOBA,
+		ExpectedERA:        &twoWayExpectedERA,
+	})
+
+	t.Cleanup(func() {
+		cleanupTestPlayers(t, db, []int{
+			withArc.MLBID,
+			noArc.MLBID,
+			twoWay.MLBID,
+		})
+	})
+
+	t.Run("returns player header, arc metadata, timeline, and projection placeholder", func(t *testing.T) {
+		response := hitGetCareerArcEndpoint(t, db, fmt.Sprintf("/api/v1/players/%d/career-arc", withArc.ID), http.StatusOK)
+
+		require.Equal(t, withArc.ID, response.Data.Player.ID)
+		require.Equal(t, withArc.FirstName+" "+withArc.LastName, response.Data.Player.FullName)
+		require.NotNil(t, response.Data.Arc)
+		require.Equal(t, 2023, response.Data.Arc.PeakYearStart)
+		require.Equal(t, 2023, response.Data.Arc.PeakYearEnd)
+		require.Equal(t, 2025, response.Data.Arc.DeclineOnsetYear)
+		require.Equal(t, "Peak Prime", response.Data.Arc.ArcShape)
+		require.Equal(t, 67.9, response.Data.Arc.PeakValueScore)
+		require.InDelta(t, 174.7, response.Data.Arc.CareerValueScoreTotal, 0.0001)
+		require.True(t, response.Data.Arc.LastComputedAt.Equal(lastComputedAt))
+		require.Len(t, response.Data.Timeline, 3)
+		require.False(t, response.Data.Timeline[0].IsPeak)
+		require.True(t, response.Data.Timeline[1].IsPeak)
+		require.False(t, response.Data.Timeline[2].IsPeak)
+		require.False(t, response.Data.Timeline[0].IsProjection)
+		require.NotNil(t, response.Data.Timeline[0].Hitting)
+		require.Nil(t, response.Data.Timeline[0].Pitching)
+		require.Equal(t, "pending", response.Data.Projection.Status)
+		require.True(t, response.Data.Projection.Eligible)
+		require.Equal(t, "projection engine not implemented yet", response.Data.Projection.Reason)
+		require.Empty(t, response.Data.Projection.Points)
+		require.Empty(t, response.Data.Projection.ConfidenceBand)
+		require.Empty(t, response.Data.Projection.Comparables)
+	})
+
+	t.Run("returns 200 with arc null when the player has history but no career arc row", func(t *testing.T) {
+		response := hitGetCareerArcEndpoint(t, db, fmt.Sprintf("/api/v1/players/%d/career-arc", noArc.ID), http.StatusOK)
+
+		require.Nil(t, response.Data.Arc)
+		require.Len(t, response.Data.Timeline, 1)
+		require.Equal(t, 2024, response.Data.Timeline[0].Year)
+		require.False(t, response.Data.Timeline[0].IsPeak)
+		require.True(t, response.Data.Projection.Eligible)
+	})
+
+	t.Run("keeps both hitting and pitching branches for two-way timeline rows", func(t *testing.T) {
+		response := hitGetCareerArcEndpoint(t, db, fmt.Sprintf("/api/v1/players/%d/career-arc", twoWay.ID), http.StatusOK)
+
+		require.Len(t, response.Data.Timeline, 1)
+		point := response.Data.Timeline[0]
+		require.NotNil(t, point.Hitting)
+		require.NotNil(t, point.Pitching)
+		require.Equal(t, 612, point.Hitting.PlateAppearances)
+		require.Equal(t, 128.2, point.Pitching.InningsPitched)
+		require.NotNil(t, point.Hitting.ExpectedWOBA)
+		require.Equal(t, twoWayExpectedWOBA, *point.Hitting.ExpectedWOBA)
+		require.NotNil(t, point.Pitching.ExpectedERA)
+		require.Equal(t, twoWayExpectedERA, *point.Pitching.ExpectedERA)
+	})
+
+	t.Run("returns 400 when the player id is not numeric", func(t *testing.T) {
+		rec := hitCareerArcEndpointRaw(t, db, "/api/v1/players/abc/career-arc")
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.JSONEq(t, `{"error":"invalid player id"}`, rec.Body.String())
+	})
+
+	t.Run("returns 404 when the player does not exist", func(t *testing.T) {
+		rec := hitCareerArcEndpointRaw(t, db, "/api/v1/players/999999999/career-arc")
+
+		require.Equal(t, http.StatusNotFound, rec.Code)
+		require.JSONEq(t, `{"error":"player not found"}`, rec.Body.String())
+	})
 }
 
 func hitGetPlayerEndpoint(t *testing.T, db *gorm.DB, path string, expectedStatus int) playerDetailTestResponse {
@@ -732,6 +1033,32 @@ func hitGetPlayerEndpoint(t *testing.T, db *gorm.DB, path string, expectedStatus
 }
 
 func hitPlayerEndpointRaw(t *testing.T, db *gorm.DB, path string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	e := echo.New()
+	RegisterRoutes(e, db, syncjob.NewStatusStore(false), "super-secret")
+
+	req := httptest.NewRequest(http.MethodGet, path, nil)
+	rec := httptest.NewRecorder()
+
+	e.ServeHTTP(rec, req)
+
+	return rec
+}
+
+func hitGetCareerArcEndpoint(t *testing.T, db *gorm.DB, path string, expectedStatus int) careerArcTestResponse {
+	t.Helper()
+
+	rec := hitCareerArcEndpointRaw(t, db, path)
+	require.Equal(t, expectedStatus, rec.Code)
+
+	var response careerArcTestResponse
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &response))
+
+	return response
+}
+
+func hitCareerArcEndpointRaw(t *testing.T, db *gorm.DB, path string) *httptest.ResponseRecorder {
 	t.Helper()
 
 	e := echo.New()
