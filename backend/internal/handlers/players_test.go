@@ -536,10 +536,10 @@ type careerArcTestResponse struct {
 }
 
 type careerArcTestData struct {
-	Player     careerArcTestPlayer      `json:"player"`
-	Arc        *careerArcTestMetadata   `json:"arc"`
-	Timeline   []careerArcTestTimeline  `json:"timeline"`
-	Projection careerArcTestProjection  `json:"projection"`
+	Player     careerArcTestPlayer     `json:"player"`
+	Arc        *careerArcTestMetadata  `json:"arc"`
+	Timeline   []careerArcTestTimeline `json:"timeline"`
+	Projection careerArcTestProjection `json:"projection"`
 }
 
 type careerArcTestPlayer struct {
@@ -579,12 +579,12 @@ type careerArcTestTimeline struct {
 }
 
 type careerArcTestProjection struct {
-	Status         string                           `json:"status"`
-	Eligible       bool                             `json:"eligible"`
-	Reason         string                           `json:"reason"`
-	Points         []careerArcTestProjectionPoint   `json:"points"`
-	ConfidenceBand []careerArcTestConfidenceBand    `json:"confidence_band"`
-	Comparables    []careerArcTestComparablePlayer  `json:"comparables"`
+	Status         string                          `json:"status"`
+	Eligible       bool                            `json:"eligible"`
+	Reason         string                          `json:"reason"`
+	Points         []careerArcTestProjectionPoint  `json:"points"`
+	ConfidenceBand []careerArcTestConfidenceBand   `json:"confidence_band"`
+	Comparables    []careerArcTestComparablePlayer `json:"comparables"`
 }
 
 type careerArcTestProjectionPoint struct {
@@ -980,6 +980,76 @@ func TestGetCareerArcEndpoint(t *testing.T) {
 		require.Empty(t, response.Data.Projection.Comparables)
 	})
 
+	t.Run("derives peak_value_score from seasons inside the stored peak window before falling back to the overall max", func(t *testing.T) {
+		windowedPeak := createTestPlayer(t, db, testPlayerFixture{
+			MLBID:     911700000 + int(nowSuffix%100000),
+			FirstName: fmt.Sprintf("CodexArc%d", nowSuffix),
+			LastName:  "WindowPeak",
+			Position:  "3B",
+			Active:    true,
+		})
+		createTestSeasonStat(t, db, windowedPeak.ID, testSeasonFixture{
+			Year:             2021,
+			TeamID:           109,
+			TeamName:         "Arizona Diamondbacks",
+			Age:              24,
+			ValueScore:       82.7,
+			GamesPlayed:      149,
+			PlateAppearances: 630,
+			AtBats:           574,
+			Hits:             173,
+			HomeRuns:         34,
+			OBP:              0.374,
+			SLG:              0.558,
+		})
+		createTestSeasonStat(t, db, windowedPeak.ID, testSeasonFixture{
+			Year:             2022,
+			TeamID:           109,
+			TeamName:         "Arizona Diamondbacks",
+			Age:              25,
+			ValueScore:       61.4,
+			GamesPlayed:      141,
+			PlateAppearances: 598,
+			AtBats:           541,
+			Hits:             158,
+			HomeRuns:         22,
+			OBP:              0.349,
+			SLG:              0.486,
+		})
+		createTestSeasonStat(t, db, windowedPeak.ID, testSeasonFixture{
+			Year:             2023,
+			TeamID:           109,
+			TeamName:         "Arizona Diamondbacks",
+			Age:              26,
+			ValueScore:       67.2,
+			GamesPlayed:      146,
+			PlateAppearances: 615,
+			AtBats:           556,
+			Hits:             165,
+			HomeRuns:         26,
+			OBP:              0.361,
+			SLG:              0.509,
+		})
+		require.NoError(t, db.Create(&models.CareerArc{
+			PlayerID:         int(windowedPeak.ID),
+			PeakYearStart:    2022,
+			PeakYearEnd:      2023,
+			DeclineOnsetYear: 2025,
+			ArcShape:         "Late Bloomer",
+			LastComputedAt:   lastComputedAt,
+		}).Error)
+
+		t.Cleanup(func() {
+			cleanupTestPlayers(t, db, []int{windowedPeak.MLBID})
+		})
+
+		response := hitGetCareerArcEndpoint(t, db, fmt.Sprintf("/api/v1/players/%d/career-arc", windowedPeak.ID), http.StatusOK)
+
+		require.NotNil(t, response.Data.Arc)
+		require.Equal(t, 67.2, response.Data.Arc.PeakValueScore)
+		require.NotEqual(t, 82.7, response.Data.Arc.PeakValueScore)
+	})
+
 	t.Run("returns 200 with arc null when the player has history but no career arc row", func(t *testing.T) {
 		response := hitGetCareerArcEndpoint(t, db, fmt.Sprintf("/api/v1/players/%d/career-arc", noArc.ID), http.StatusOK)
 
@@ -1017,6 +1087,18 @@ func TestGetCareerArcEndpoint(t *testing.T) {
 
 		require.Equal(t, http.StatusNotFound, rec.Code)
 		require.JSONEq(t, `{"error":"player not found"}`, rec.Body.String())
+	})
+
+	t.Run("returns 500 when the player lookup fails for a database error", func(t *testing.T) {
+		failingDB := testHandlersDB(t)
+		sqlDB, err := failingDB.DB()
+		require.NoError(t, err)
+		require.NoError(t, sqlDB.Close())
+
+		rec := hitCareerArcEndpointRaw(t, failingDB, "/api/v1/players/1/career-arc")
+
+		require.Equal(t, http.StatusInternalServerError, rec.Code)
+		require.Contains(t, rec.Body.String(), `"error":`)
 	})
 }
 

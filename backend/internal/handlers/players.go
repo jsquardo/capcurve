@@ -658,7 +658,7 @@ func newCareerArcMetadata(arc *models.CareerArc, timeline []careerArcTimelineIte
 		PeakYearEnd:           arc.PeakYearEnd,
 		DeclineOnsetYear:      arcDeclineOnsetYear(arc),
 		ArcShape:              arc.ArcShape,
-		PeakValueScore:        peakTimelineValueScore(timeline),
+		PeakValueScore:        peakTimelineValueScore(timeline, arc),
 		CareerValueScoreTotal: totalTimelineValueScore(timeline),
 		LastComputedAt:        arc.LastComputedAt,
 	}
@@ -680,11 +680,44 @@ func arcDeclineOnsetYear(arc *models.CareerArc) int {
 	return arc.DeclineOnsetYear
 }
 
-func peakTimelineValueScore(timeline []careerArcTimelineItem) float64 {
+func peakTimelineValueScore(timeline []careerArcTimelineItem, arc *models.CareerArc) float64 {
 	if len(timeline) == 0 {
 		return 0
 	}
 
+	peak, ok := peakTimelineValueScoreInWindow(timeline, arc)
+	if ok {
+		return peak
+	}
+
+	return peakTimelineValueScoreAcrossTimeline(timeline)
+}
+
+func peakTimelineValueScoreInWindow(timeline []careerArcTimelineItem, arc *models.CareerArc) (float64, bool) {
+	if arc == nil || arc.PeakYearStart == 0 || arc.PeakYearEnd == 0 {
+		return 0, false
+	}
+
+	var (
+		peak  float64
+		found bool
+	)
+
+	for _, point := range timeline {
+		if point.Year < arc.PeakYearStart || point.Year > arc.PeakYearEnd {
+			continue
+		}
+
+		if !found || point.ValueScore > peak {
+			peak = point.ValueScore
+			found = true
+		}
+	}
+
+	return peak, found
+}
+
+func peakTimelineValueScoreAcrossTimeline(timeline []careerArcTimelineItem) float64 {
 	peak := timeline[0].ValueScore
 	for _, point := range timeline[1:] {
 		if point.ValueScore > peak {

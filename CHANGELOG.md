@@ -1,3 +1,19 @@
+## [2026-03-28] — Session Summary
+
+### Added
+- Added backend integration coverage proving `GET /api/v1/players/:id/career-arc` uses the in-window peak season score when the overall timeline max lives outside `peak_year_start..peak_year_end`
+- Added backend integration coverage for the closed-database `500` branch on `GET /api/v1/players/:id/career-arc`
+
+### Changed
+- Updated career-arc metadata shaping so `peak_value_score` now prefers the inclusive stored peak window and only falls back to the overall historical max when the peak window has no matching timeline seasons
+- Updated `AGENTS.md` Current State so the next session resumes with `GET /api/v1/players/:id/projection`
+
+### Fixed
+- Fixed `GET /api/v1/players/:id/career-arc` so peak-score reporting no longer leaks a higher `value_score` from seasons outside the stored peak window
+
+### Notes
+- Verified with `make test`
+
 ## [2026-03-27] — Session Summary
 
 ### Added
