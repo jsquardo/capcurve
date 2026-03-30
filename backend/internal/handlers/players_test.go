@@ -961,8 +961,9 @@ func TestGetCareerArcEndpoint(t *testing.T) {
 		})
 	})
 
-	t.Run("returns player header, arc metadata, timeline, and projection placeholder", func(t *testing.T) {
+	t.Run("returns player header, arc metadata, timeline, and the same projection payload as the dedicated endpoint", func(t *testing.T) {
 		response := hitGetCareerArcEndpoint(t, db, fmt.Sprintf("/api/v1/players/%d/career-arc", withArc.ID), http.StatusOK)
+		projectionResponse := hitGetProjectionEndpoint(t, db, fmt.Sprintf("/api/v1/players/%d/projection", withArc.ID), http.StatusOK)
 
 		require.Equal(t, withArc.ID, response.Data.Player.ID)
 		require.Equal(t, withArc.FirstName+" "+withArc.LastName, response.Data.Player.FullName)
@@ -981,12 +982,12 @@ func TestGetCareerArcEndpoint(t *testing.T) {
 		require.False(t, response.Data.Timeline[0].IsProjection)
 		require.NotNil(t, response.Data.Timeline[0].Hitting)
 		require.Nil(t, response.Data.Timeline[0].Pitching)
-		require.Equal(t, "pending", response.Data.Projection.Status)
-		require.True(t, response.Data.Projection.Eligible)
-		require.Equal(t, "projection engine not implemented yet", response.Data.Projection.Reason)
-		require.Empty(t, response.Data.Projection.Points)
-		require.Empty(t, response.Data.Projection.ConfidenceBand)
-		require.Empty(t, response.Data.Projection.Comparables)
+		require.Equal(t, projectionResponse.Data.Projection.Status, response.Data.Projection.Status)
+		require.Equal(t, projectionResponse.Data.Projection.Eligible, response.Data.Projection.Eligible)
+		require.Equal(t, projectionResponse.Data.Projection.Reason, response.Data.Projection.Reason)
+		require.Equal(t, projectionResponse.Data.Projection.Points, response.Data.Projection.Points)
+		require.Equal(t, projectionResponse.Data.Projection.ConfidenceBand, response.Data.Projection.ConfidenceBand)
+		require.Equal(t, projectionResponse.Data.Projection.Comparables, response.Data.Projection.Comparables)
 	})
 
 	t.Run("derives peak_value_score from seasons inside the stored peak window before falling back to the overall max", func(t *testing.T) {
@@ -1067,6 +1068,9 @@ func TestGetCareerArcEndpoint(t *testing.T) {
 		require.Equal(t, 2024, response.Data.Timeline[0].Year)
 		require.False(t, response.Data.Timeline[0].IsPeak)
 		require.True(t, response.Data.Projection.Eligible)
+		require.Equal(t, "ready", response.Data.Projection.Status)
+		require.NotEmpty(t, response.Data.Projection.Points)
+		require.Len(t, response.Data.Projection.Points, len(response.Data.Projection.ConfidenceBand))
 	})
 
 	t.Run("keeps both hitting and pitching branches for two-way timeline rows", func(t *testing.T) {

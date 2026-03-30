@@ -600,7 +600,7 @@ func newPlayerDetailItem(player models.Player, seasonStats []models.SeasonStat) 
 	return item
 }
 
-func newCareerArcData(player models.Player, seasonStats []models.SeasonStat, arc *models.CareerArc) careerArcData {
+func newCareerArcData(player models.Player, seasonStats []models.SeasonStat, arc *models.CareerArc, projectionPayload careerArcProjection) careerArcData {
 	timeline := make([]careerArcTimelineItem, 0, len(seasonStats))
 	for _, stat := range seasonStats {
 		timeline = append(timeline, newCareerArcTimelineItem(stat, arc))
@@ -610,7 +610,7 @@ func newCareerArcData(player models.Player, seasonStats []models.SeasonStat, arc
 		Player:     newCareerArcPlayerItem(player),
 		Arc:        newCareerArcMetadata(arc, timeline),
 		Timeline:   timeline,
-		Projection: newCareerArcProjection(player.Active),
+		Projection: projectionPayload,
 	}
 }
 
@@ -747,24 +747,6 @@ func totalTimelineValueScore(timeline []careerArcTimelineItem) float64 {
 	return total
 }
 
-func newCareerArcProjection(active bool) careerArcProjection {
-	projection := careerArcProjection{
-		Status:         "pending",
-		Eligible:       active,
-		Points:         []careerArcProjectionPoint{},
-		ConfidenceBand: []careerArcConfidenceBand{},
-		Comparables:    []careerArcComparablePlayer{},
-	}
-
-	if active {
-		projection.Reason = "projection engine not implemented yet"
-		return projection
-	}
-
-	projection.Reason = "projections are only available for active players"
-	return projection
-}
-
 func newProjectionData(player models.Player, projection careerArcProjection) projectionData {
 	return projectionData{
 		Player:     newCareerArcPlayerItem(player),
@@ -809,6 +791,26 @@ func newProjectionPayload(result projection.Result) careerArcProjection {
 	}
 
 	return payload
+}
+
+func (h *Handler) buildPlayerProjectionPayload(player models.Player, history []models.SeasonStat) (careerArcProjection, error) {
+	service := projection.NewService()
+
+	if !player.Active || len(history) == 0 {
+		return newProjectionPayload(service.Build(player, history, nil, nil)), nil
+	}
+
+	var candidates []models.Player
+	if err := h.db.Where("id <> ?", player.ID).Find(&candidates).Error; err != nil {
+		return careerArcProjection{}, err
+	}
+
+	var candidateStats []models.SeasonStat
+	if err := h.db.Where("player_id <> ?", player.ID).Order("player_id ASC, year ASC, id ASC").Find(&candidateStats).Error; err != nil {
+		return careerArcProjection{}, err
+	}
+
+	return newProjectionPayload(service.Build(player, history, candidates, candidateStats)), nil
 }
 
 func newPlayerHittingStats(stat models.SeasonStat) *playerHittingStats {
@@ -903,8 +905,13 @@ func (h *Handler) GetCareerArc(c echo.Context) error {
 		arc = &arcRecord
 	}
 
+	projectionPayload, err := h.buildPlayerProjectionPayload(player, stats)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
 	return c.JSON(http.StatusOK, careerArcResponse{
-		Data: newCareerArcData(player, stats, arc),
+		Data: newCareerArcData(player, stats, arc, projectionPayload),
 	})
 }
 
@@ -928,27 +935,13 @@ func (h *Handler) GetProjection(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	service := projection.NewService()
-	result := projection.Result{}
-
-	if !player.Active || len(history) == 0 {
-		result = service.Build(player, history, nil, nil)
-	} else {
-		var candidates []models.Player
-		if err := h.db.Where("id <> ?", player.ID).Find(&candidates).Error; err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-
-		var candidateStats []models.SeasonStat
-		if err := h.db.Where("player_id <> ?", player.ID).Order("player_id ASC, year ASC, id ASC").Find(&candidateStats).Error; err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-
-		result = service.Build(player, history, candidates, candidateStats)
+	projectionPayload, err := h.buildPlayerProjectionPayload(player, history)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, projectionResponse{
-		Data: newProjectionData(player, newProjectionPayload(result)),
+		Data: newProjectionData(player, projectionPayload),
 	})
 }
 

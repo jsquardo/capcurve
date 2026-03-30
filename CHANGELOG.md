@@ -580,3 +580,19 @@
 ### Notes
 - The projection engine still requires comparable candidates to have a valid anchor season plus at least one later season, so retired-only filtering works alongside the existing future-outcome guardrails
 - Ran `GOCACHE=/tmp/capcurve-gocache go test ./internal/projection` and `make test` successfully
+
+## [2026-03-30] — Session Summary
+
+### Added
+- Added backend integration coverage proving `GET /api/v1/players/:id/career-arc` returns the same projection payload as `GET /api/v1/players/:id/projection` for the same player
+
+### Changed
+- Wired the career-arc endpoint to the real shared projection engine instead of the temporary placeholder payload
+- Consolidated projection loading into a shared handler helper so career-arc and dedicated projection responses stay in sync
+
+### Fixed
+- Removed the stale `"projection engine not implemented yet"` placeholder behavior from the career-arc response for active players
+
+### Notes
+- `/career-arc` now returns the full shared projection payload shape because the player page needs forecast points, confidence bands, and comparable-player context together
+- Ran `GOCACHE=/tmp/capcurve-gocache go test ./internal/handlers` and `make test` successfully
