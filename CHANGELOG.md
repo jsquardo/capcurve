@@ -1,6 +1,22 @@
 ## [2026-03-30] — Session Summary
 
 ### Added
+- No new features or test cases were added; this session was a behavior-neutral handler refactor
+
+### Changed
+- Split `backend/internal/handlers/players.go` into focused files: `players.go`, `career_arc.go`, `projection.go`, and `helpers.go`
+- Moved shared response types and shaping helpers into `helpers.go` so list/detail, career-arc, and projection handlers can stay smaller and easier to navigate
+- Updated `AGENTS.md` Current State so the next session resumes with the deliberate `GET /api/v1/leaderboards` contract
+
+### Fixed
+- Reduced handler-file sprawl without changing endpoint behavior, which makes the Phase 2 API surface easier to maintain as the remaining endpoints are added
+
+### Notes
+- Verified with `make test`
+
+## [2026-03-30] — Session Summary
+
+### Added
 - Added backend integration coverage proving `GET /api/v1/players` returns explicit page-based metadata and the correct second-page slice for `page=2&page_size=1`
 
 ### Changed
