@@ -645,3 +645,22 @@
 ### Notes
 - `/career-arc` now returns the full shared projection payload shape because the player page needs forecast points, confidence bands, and comparable-player context together
 - Ran `GOCACHE=/tmp/capcurve-gocache go test ./internal/handlers` and `make test` successfully
+
+## [2026-03-30] — Session Summary
+
+### Added
+- Added a contract-independent `GET /api/v1/leaderboards` endpoint with support for the initial `peak_arc`, `hr`, `avg`, `era`, and `k9` categories
+- Added integration coverage for leaderboard category validation, season override behavior, pagination/rank numbering, contract-route removal, and value-score-based `peak_arc` ordering
+
+### Changed
+- Removed deferred contract/salary routes from the public `/api/v1` surface and replaced the old WAR-based leaderboard stub with the deliberate query-param leaderboard contract
+- Split the old `backend/internal/handlers/helpers.go` catch-all into focused response/shaping files for player-list, player-detail, career-arc/projection, and leaderboard payloads
+- Defaulted season-based leaderboards to the most recent completed season while still accepting an explicit `season` query param
+
+### Fixed
+- Stopped the public leaderboard API from exposing deferred contract-dependent surfaces while Phase 5 remains blocked
+- Switched `peak_arc` ranking from legacy WAR fields to derived peak `value_score` so leaderboard results match CapCurve's value-score-first philosophy
+
+### Notes
+- `peak_arc` now computes leaderboard value from `season_stats.value_score` inside the stored career-arc peak window and falls back to the player's overall max season value score only if the peak window has no matching rows
+- Ran `make test` successfully

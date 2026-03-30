@@ -21,13 +21,7 @@ func RegisterRoutes(e *echo.Echo, db *gorm.DB, syncStatus *syncjob.StatusStore, 
 	players.GET("/:id/projection", h.GetProjection)
 
 	api.GET("/players/:id/career-arc", h.GetCareerArc)
-	api.GET("/players/:id/contracts", h.GetPlayerContracts)
-	api.GET("/contracts/:id", h.GetContract)
-
-	leaderboards := api.Group("/leaderboards")
-	leaderboards.GET("/most-overpaid", h.MostOverpaid)
-	leaderboards.GET("/best-value", h.BestValue)
-	leaderboards.GET("/peak-arcs", h.PeakArcs)
+	api.GET("/leaderboards", h.GetLeaderboards)
 }
 
 type Handler struct {
