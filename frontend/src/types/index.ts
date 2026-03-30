@@ -38,10 +38,10 @@ export interface PlayerListItem {
 }
 
 export interface PlayerListMeta {
-  limit: number
-  offset: number
-  count: number
   total: number
+  page: number
+  page_size: number
+  total_pages: number
 }
 
 export interface PlayerListResponse {

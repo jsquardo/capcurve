@@ -37,10 +37,10 @@ type playerSeasonListItem struct {
 }
 
 type playerListMeta struct {
-	Limit  int   `json:"limit"`
-	Offset int   `json:"offset"`
-	Count  int   `json:"count"`
-	Total  int64 `json:"total"`
+	Total      int64 `json:"total"`
+	Page       int   `json:"page"`
+	PageSize   int   `json:"page_size"`
+	TotalPages int   `json:"total_pages"`
 }
 
 type playerListResponse struct {
@@ -248,8 +248,8 @@ func (h *Handler) ListPlayers(c echo.Context) error {
 	if err := h.buildPlayerListOrderedQuery(params).
 		Select(playerListSelectColumns()).
 		Order("players.id ASC").
-		Limit(params.Limit).
-		Offset(params.Offset).
+		Limit(params.PageSize).
+		Offset(playerListOffset(params)).
 		Scan(&rows).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -257,10 +257,10 @@ func (h *Handler) ListPlayers(c echo.Context) error {
 	response := playerListResponse{
 		Data: make([]playerListItem, 0, len(rows)),
 		Meta: playerListMeta{
-			Limit:  params.Limit,
-			Offset: params.Offset,
-			Count:  len(rows),
-			Total:  total,
+			Total:      total,
+			Page:       params.Page,
+			PageSize:   params.PageSize,
+			TotalPages: totalPages(total, params.PageSize),
 		},
 	}
 
@@ -304,8 +304,8 @@ type playerListParams struct {
 	Position string
 	Team     string
 	Season   *int
-	Limit    int
-	Offset   int
+	Page     int
+	PageSize int
 	Sort     string
 }
 
@@ -314,8 +314,8 @@ func parsePlayerListParams(c echo.Context) (playerListParams, error) {
 		Query:    strings.TrimSpace(c.QueryParam("q")),
 		Position: strings.TrimSpace(c.QueryParam("position")),
 		Team:     strings.TrimSpace(c.QueryParam("team")),
-		Limit:    25,
-		Offset:   0,
+		Page:     1,
+		PageSize: 25,
 		Sort:     strings.TrimSpace(c.QueryParam("sort")),
 	}
 
@@ -339,23 +339,46 @@ func parsePlayerListParams(c echo.Context) (playerListParams, error) {
 		params.Season = &parsed
 	}
 
-	if limit := strings.TrimSpace(c.QueryParam("limit")); limit != "" {
-		parsed, err := strconv.Atoi(limit)
+	if page := strings.TrimSpace(c.QueryParam("page")); page != "" {
+		parsed, err := strconv.Atoi(page)
 		if err != nil || parsed <= 0 {
-			return playerListParams{}, echo.NewHTTPError(http.StatusBadRequest, "invalid limit value")
+			return playerListParams{}, echo.NewHTTPError(http.StatusBadRequest, "invalid page value")
+		}
+		params.Page = parsed
+	}
+
+	if pageSize := strings.TrimSpace(c.QueryParam("page_size")); pageSize != "" {
+		parsed, err := strconv.Atoi(pageSize)
+		if err != nil || parsed <= 0 {
+			return playerListParams{}, echo.NewHTTPError(http.StatusBadRequest, "invalid page_size value")
 		}
 		if parsed > 100 {
 			parsed = 100
 		}
-		params.Limit = parsed
+		params.PageSize = parsed
 	}
 
-	if offset := strings.TrimSpace(c.QueryParam("offset")); offset != "" {
-		parsed, err := strconv.Atoi(offset)
-		if err != nil || parsed < 0 {
-			return playerListParams{}, echo.NewHTTPError(http.StatusBadRequest, "invalid offset value")
+	if pageSize := strings.TrimSpace(c.QueryParam("page_size")); pageSize == "" {
+		if limit := strings.TrimSpace(c.QueryParam("limit")); limit != "" {
+			parsed, err := strconv.Atoi(limit)
+			if err != nil || parsed <= 0 {
+				return playerListParams{}, echo.NewHTTPError(http.StatusBadRequest, "invalid limit value")
+			}
+			if parsed > 100 {
+				parsed = 100
+			}
+			params.PageSize = parsed
 		}
-		params.Offset = parsed
+	}
+
+	if page := strings.TrimSpace(c.QueryParam("page")); page == "" {
+		if offset := strings.TrimSpace(c.QueryParam("offset")); offset != "" {
+			parsed, err := strconv.Atoi(offset)
+			if err != nil || parsed < 0 {
+				return playerListParams{}, echo.NewHTTPError(http.StatusBadRequest, "invalid offset value")
+			}
+			params.Page = (parsed / params.PageSize) + 1
+		}
 	}
 
 	switch params.Sort {
@@ -418,6 +441,18 @@ func playerListParamError(err error) string {
 	}
 
 	return err.Error()
+}
+
+func playerListOffset(params playerListParams) int {
+	return (params.Page - 1) * params.PageSize
+}
+
+func totalPages(total int64, pageSize int) int {
+	if total == 0 || pageSize <= 0 {
+		return 0
+	}
+
+	return int((total + int64(pageSize) - 1) / int64(pageSize))
 }
 
 func seasonSnapshotSubquery(db *gorm.DB, season *int) *gorm.DB {
@@ -800,17 +835,40 @@ func (h *Handler) buildPlayerProjectionPayload(player models.Player, history []m
 		return newProjectionPayload(service.Build(player, history, nil, nil)), nil
 	}
 
-	var candidates []models.Player
-	if err := h.db.Where("id <> ?", player.ID).Find(&candidates).Error; err != nil {
-		return careerArcProjection{}, err
-	}
-
-	var candidateStats []models.SeasonStat
-	if err := h.db.Where("player_id <> ?", player.ID).Order("player_id ASC, year ASC, id ASC").Find(&candidateStats).Error; err != nil {
+	candidates, candidateStats, err := h.loadProjectionComparableCandidates(player.ID)
+	if err != nil {
 		return careerArcProjection{}, err
 	}
 
 	return newProjectionPayload(service.Build(player, history, candidates, candidateStats)), nil
+}
+
+func (h *Handler) loadProjectionComparableCandidates(playerID uint) ([]models.Player, []models.SeasonStat, error) {
+	var candidates []models.Player
+	if err := h.db.
+		Where("id <> ? AND active = ?", playerID, false).
+		Find(&candidates).Error; err != nil {
+		return nil, nil, err
+	}
+
+	if len(candidates) == 0 {
+		return []models.Player{}, []models.SeasonStat{}, nil
+	}
+
+	candidateIDs := make([]uint, 0, len(candidates))
+	for _, candidate := range candidates {
+		candidateIDs = append(candidateIDs, candidate.ID)
+	}
+
+	var candidateStats []models.SeasonStat
+	if err := h.db.
+		Where("player_id IN ?", candidateIDs).
+		Order("player_id ASC, year ASC, id ASC").
+		Find(&candidateStats).Error; err != nil {
+		return nil, nil, err
+	}
+
+	return candidates, candidateStats, nil
 }
 
 func newPlayerHittingStats(stat models.SeasonStat) *playerHittingStats {

@@ -1,3 +1,36 @@
+## [2026-03-30] — Session Summary
+
+### Added
+- Added backend integration coverage proving `GET /api/v1/players` returns explicit page-based metadata and the correct second-page slice for `page=2&page_size=1`
+
+### Changed
+- Updated `GET /api/v1/players` to return `{ data, meta: { total, page, page_size, total_pages } }` so the frontend can build a full paginator from a single response
+- Updated the player-list handler to accept `page` and `page_size` as first-class pagination inputs while still deriving equivalent paging from legacy `limit` and `offset` values when needed
+- Updated the shared frontend `PlayerListResponse` type to match the explicit page-based pagination metadata
+- Updated `AGENTS.md` Current State so the next session resumes with tightening projection comparable-player candidate queries
+
+### Fixed
+- Removed the old list-response assumption that clients needed `limit`, `offset`, and `count` metadata instead of explicit paginator-friendly page totals
+
+### Notes
+- Verified with `make test`
+
+## [2026-03-30] — Session Summary
+
+### Added
+- Added handler-level regression coverage proving projection comparable-candidate loading excludes active players and only returns season rows for the retired candidate set
+
+### Changed
+- Updated `buildPlayerProjectionPayload` to load comparable-player candidates through a dedicated helper that queries only retired non-target players
+- Updated projection candidate stat loading so request-time projection work only fetches `season_stats` rows for the filtered retired candidate IDs
+- Updated `AGENTS.md` Current State so the next session resumes with splitting `handlers/players.go` into smaller focused files
+
+### Fixed
+- Removed the projection request-path inefficiency where active-player candidate rows were loaded from the database even though the projection service would always discard them before comparable matching
+
+### Notes
+- Verified with `make test`
+
 ## [2026-03-28] — Session Summary
 
 ### Added

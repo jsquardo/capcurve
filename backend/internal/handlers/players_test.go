@@ -196,7 +196,10 @@ func TestListPlayersEndpoint(t *testing.T) {
 	t.Run("q search returns compact list data and null latest season when absent", func(t *testing.T) {
 		response := hitListPlayersEndpoint(t, db, "/api/v1/players?q="+searchA.FirstName)
 
-		require.Equal(t, 2, response.Meta.Count)
+		require.EqualValues(t, 2, response.Meta.Total)
+		require.Equal(t, 1, response.Meta.Page)
+		require.Equal(t, 25, response.Meta.PageSize)
+		require.Equal(t, 1, response.Meta.TotalPages)
 		require.Equal(t, 2, len(response.Data))
 		require.Equal(t, "Alpha", response.Data[0].LastName)
 		require.Equal(t, searchA.FirstName+" Alpha", response.Data[0].FullName)
@@ -209,7 +212,8 @@ func TestListPlayersEndpoint(t *testing.T) {
 	t.Run("active filter limits the list", func(t *testing.T) {
 		response := hitListPlayersEndpoint(t, db, "/api/v1/players?q="+activePrefix+"&active=true")
 
-		require.Equal(t, 1, response.Meta.Count)
+		require.EqualValues(t, 1, response.Meta.Total)
+		require.Equal(t, 1, response.Meta.TotalPages)
 		require.Len(t, response.Data, 1)
 		require.True(t, response.Data[0].Active)
 		require.Equal(t, "Yes", response.Data[0].LastName)
@@ -218,7 +222,8 @@ func TestListPlayersEndpoint(t *testing.T) {
 	t.Run("sort by joined latest season value score uses the derived snapshot", func(t *testing.T) {
 		response := hitListPlayersEndpoint(t, db, "/api/v1/players?q="+sortPrefix+"&sort=-value_score")
 
-		require.Equal(t, 2, response.Meta.Count)
+		require.EqualValues(t, 2, response.Meta.Total)
+		require.Equal(t, 1, response.Meta.TotalPages)
 		require.Len(t, response.Data, 2)
 		require.Equal(t, "High", response.Data[0].LastName)
 		require.NotNil(t, response.Data[0].LatestSeason)
@@ -230,7 +235,7 @@ func TestListPlayersEndpoint(t *testing.T) {
 	t.Run("team filter matches the joined snapshot by team name and numeric team id", func(t *testing.T) {
 		byName := hitListPlayersEndpoint(t, db, "/api/v1/players?q="+teamPrefix+"&team=Yankees")
 
-		require.Equal(t, 1, byName.Meta.Count)
+		require.EqualValues(t, 1, byName.Meta.Total)
 		require.Len(t, byName.Data, 1)
 		require.Equal(t, "NameMatch", byName.Data[0].LastName)
 		require.NotNil(t, byName.Data[0].LatestSeason)
@@ -239,7 +244,7 @@ func TestListPlayersEndpoint(t *testing.T) {
 
 		byID := hitListPlayersEndpoint(t, db, "/api/v1/players?q="+teamPrefix+"&team=147")
 
-		require.Equal(t, 2, byID.Meta.Count)
+		require.EqualValues(t, 2, byID.Meta.Total)
 		require.Len(t, byID.Data, 2)
 		require.Equal(t, "IDMatch", byID.Data[0].LastName)
 		require.Equal(t, "NameMatch", byID.Data[1].LastName)
@@ -252,7 +257,8 @@ func TestListPlayersEndpoint(t *testing.T) {
 	t.Run("season filter swaps latest season snapshot to the requested year", func(t *testing.T) {
 		response := hitListPlayersEndpoint(t, db, "/api/v1/players?q="+seasonPrefix+"&season=2024")
 
-		require.Equal(t, 2, response.Meta.Count)
+		require.EqualValues(t, 2, response.Meta.Total)
+		require.Equal(t, 1, response.Meta.TotalPages)
 		require.Len(t, response.Data, 2)
 		require.Equal(t, "OtherYear", response.Data[0].LastName)
 		require.Nil(t, response.Data[0].LatestSeason)
@@ -263,6 +269,94 @@ func TestListPlayersEndpoint(t *testing.T) {
 		require.Equal(t, "Boston Red Sox", response.Data[1].LatestSeason.TeamName)
 		require.Equal(t, 70.2, response.Data[1].LatestSeason.ValueScore)
 	})
+
+	t.Run("page and page_size expose explicit pagination metadata", func(t *testing.T) {
+		response := hitListPlayersEndpoint(t, db, "/api/v1/players?q="+teamPrefix+"&team=147&page=2&page_size=1")
+
+		require.EqualValues(t, 2, response.Meta.Total)
+		require.Equal(t, 2, response.Meta.Page)
+		require.Equal(t, 1, response.Meta.PageSize)
+		require.Equal(t, 2, response.Meta.TotalPages)
+		require.Len(t, response.Data, 1)
+		require.Equal(t, "NameMatch", response.Data[0].LastName)
+	})
+}
+
+func TestLoadProjectionComparableCandidatesOnlyReturnsRetiredPlayers(t *testing.T) {
+	db := testHandlersDB(t)
+	nowSuffix := time.Now().UnixNano()
+
+	target := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     913100000 + int(nowSuffix%100000),
+		FirstName: fmt.Sprintf("CodexComparable%d", nowSuffix),
+		LastName:  "Target",
+		Position:  "OF",
+		Active:    true,
+	})
+	activeComp := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     913200000 + int(nowSuffix%100000),
+		FirstName: fmt.Sprintf("CodexComparable%d", nowSuffix),
+		LastName:  "Active",
+		Position:  "OF",
+		Active:    true,
+	})
+	retiredComp := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     913300000 + int(nowSuffix%100000),
+		FirstName: fmt.Sprintf("CodexComparable%d", nowSuffix),
+		LastName:  "Retired",
+		Position:  "OF",
+		Active:    false,
+	})
+
+	createTestSeasonStat(t, db, activeComp.ID, testSeasonFixture{
+		Year:             2024,
+		TeamID:           147,
+		TeamName:         "New York Yankees",
+		Age:              28,
+		ValueScore:       61.2,
+		GamesPlayed:      145,
+		PlateAppearances: 620,
+		AtBats:           552,
+		Hits:             166,
+		HomeRuns:         27,
+		StolenBases:      19,
+		BattingAvg:       0.301,
+		OBP:              0.368,
+		SLG:              0.521,
+	})
+	createTestSeasonStat(t, db, retiredComp.ID, testSeasonFixture{
+		Year:             2021,
+		TeamID:           111,
+		TeamName:         "Boston Red Sox",
+		Age:              29,
+		ValueScore:       58.7,
+		GamesPlayed:      141,
+		PlateAppearances: 601,
+		AtBats:           538,
+		Hits:             159,
+		HomeRuns:         24,
+		StolenBases:      15,
+		BattingAvg:       0.296,
+		OBP:              0.359,
+		SLG:              0.497,
+	})
+
+	t.Cleanup(func() {
+		cleanupTestPlayers(t, db, []int{
+			target.MLBID,
+			activeComp.MLBID,
+			retiredComp.MLBID,
+		})
+	})
+
+	handler := &Handler{db: db}
+
+	candidates, candidateStats, err := handler.loadProjectionComparableCandidates(target.ID)
+	require.NoError(t, err)
+	require.Len(t, candidates, 1)
+	require.Equal(t, retiredComp.ID, candidates[0].ID)
+	require.Len(t, candidateStats, 1)
+	require.Equal(t, int(retiredComp.ID), candidateStats[0].PlayerID)
 }
 
 type testPlayerFixture struct {
