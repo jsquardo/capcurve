@@ -535,10 +535,19 @@ type careerArcTestResponse struct {
 	Data careerArcTestData `json:"data"`
 }
 
+type projectionTestResponse struct {
+	Data projectionTestData `json:"data"`
+}
+
 type careerArcTestData struct {
 	Player     careerArcTestPlayer     `json:"player"`
 	Arc        *careerArcTestMetadata  `json:"arc"`
 	Timeline   []careerArcTestTimeline `json:"timeline"`
+	Projection careerArcTestProjection `json:"projection"`
+}
+
+type projectionTestData struct {
+	Player     careerArcTestPlayer     `json:"player"`
 	Projection careerArcTestProjection `json:"projection"`
 }
 
@@ -1102,6 +1111,190 @@ func TestGetCareerArcEndpoint(t *testing.T) {
 	})
 }
 
+func TestGetProjectionEndpoint(t *testing.T) {
+	db := testHandlersDB(t)
+	nowSuffix := time.Now().UnixNano()
+
+	active := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     912100000 + int(nowSuffix%100000),
+		FirstName: fmt.Sprintf("CodexProjection%d", nowSuffix),
+		LastName:  "Active",
+		Position:  "OF",
+		Active:    true,
+	})
+	createTestSeasonStat(t, db, active.ID, testSeasonFixture{
+		Year:             2023,
+		TeamID:           147,
+		TeamName:         "New York Yankees",
+		Age:              27,
+		ValueScore:       54.0,
+		GamesPlayed:      138,
+		PlateAppearances: 590,
+		AtBats:           532,
+		Hits:             152,
+		HomeRuns:         24,
+		StolenBases:      18,
+		BattingAvg:       0.286,
+		OBP:              0.354,
+		SLG:              0.497,
+	})
+	createTestSeasonStat(t, db, active.ID, testSeasonFixture{
+		Year:             2024,
+		TeamID:           147,
+		TeamName:         "New York Yankees",
+		Age:              28,
+		ValueScore:       61.0,
+		GamesPlayed:      145,
+		PlateAppearances: 615,
+		AtBats:           550,
+		Hits:             165,
+		HomeRuns:         27,
+		StolenBases:      21,
+		BattingAvg:       0.300,
+		OBP:              0.368,
+		SLG:              0.522,
+	})
+	createTestSeasonStat(t, db, active.ID, testSeasonFixture{
+		Year:             2025,
+		TeamID:           147,
+		TeamName:         "New York Yankees",
+		Age:              29,
+		ValueScore:       67.0,
+		GamesPlayed:      149,
+		PlateAppearances: 632,
+		AtBats:           566,
+		Hits:             171,
+		HomeRuns:         30,
+		StolenBases:      19,
+		BattingAvg:       0.302,
+		OBP:              0.375,
+		SLG:              0.541,
+	})
+
+	compOne := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     912200000 + int(nowSuffix%100000),
+		FirstName: fmt.Sprintf("CodexProjection%d", nowSuffix),
+		LastName:  "CompOne",
+		Position:  "OF",
+		Active:    false,
+	})
+	for _, season := range []testSeasonFixture{
+		{Year: 2021, TeamID: 121, TeamName: "New York Mets", Age: 27, ValueScore: 52.0, GamesPlayed: 140, PlateAppearances: 600, AtBats: 544, Hits: 158, HomeRuns: 22, StolenBases: 17, BattingAvg: 0.290, OBP: 0.356, SLG: 0.489},
+		{Year: 2022, TeamID: 121, TeamName: "New York Mets", Age: 28, ValueScore: 60.0, GamesPlayed: 144, PlateAppearances: 618, AtBats: 553, Hits: 166, HomeRuns: 26, StolenBases: 20, BattingAvg: 0.300, OBP: 0.366, SLG: 0.518},
+		{Year: 2023, TeamID: 121, TeamName: "New York Mets", Age: 29, ValueScore: 65.0, GamesPlayed: 146, PlateAppearances: 624, AtBats: 557, Hits: 168, HomeRuns: 28, StolenBases: 18, BattingAvg: 0.302, OBP: 0.370, SLG: 0.530},
+		{Year: 2024, TeamID: 121, TeamName: "New York Mets", Age: 30, ValueScore: 63.0, GamesPlayed: 143, PlateAppearances: 610, AtBats: 545, Hits: 160, HomeRuns: 24, StolenBases: 15, BattingAvg: 0.294, OBP: 0.361, SLG: 0.505},
+		{Year: 2025, TeamID: 121, TeamName: "New York Mets", Age: 31, ValueScore: 58.0, GamesPlayed: 137, PlateAppearances: 585, AtBats: 525, Hits: 149, HomeRuns: 20, StolenBases: 13, BattingAvg: 0.284, OBP: 0.347, SLG: 0.472},
+	} {
+		createTestSeasonStat(t, db, compOne.ID, season)
+	}
+
+	compTwo := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     912300000 + int(nowSuffix%100000),
+		FirstName: fmt.Sprintf("CodexProjection%d", nowSuffix),
+		LastName:  "CompTwo",
+		Position:  "RF",
+		Active:    false,
+	})
+	for _, season := range []testSeasonFixture{
+		{Year: 2020, TeamID: 111, TeamName: "Boston Red Sox", Age: 26, ValueScore: 50.0, GamesPlayed: 133, PlateAppearances: 575, AtBats: 520, Hits: 150, HomeRuns: 20, StolenBases: 16, BattingAvg: 0.288, OBP: 0.350, SLG: 0.481},
+		{Year: 2021, TeamID: 111, TeamName: "Boston Red Sox", Age: 27, ValueScore: 55.0, GamesPlayed: 141, PlateAppearances: 602, AtBats: 540, Hits: 161, HomeRuns: 24, StolenBases: 18, BattingAvg: 0.298, OBP: 0.360, SLG: 0.503},
+		{Year: 2022, TeamID: 111, TeamName: "Boston Red Sox", Age: 28, ValueScore: 62.0, GamesPlayed: 145, PlateAppearances: 621, AtBats: 556, Hits: 170, HomeRuns: 27, StolenBases: 20, BattingAvg: 0.306, OBP: 0.371, SLG: 0.527},
+		{Year: 2023, TeamID: 111, TeamName: "Boston Red Sox", Age: 29, ValueScore: 66.0, GamesPlayed: 148, PlateAppearances: 629, AtBats: 560, Hits: 172, HomeRuns: 29, StolenBases: 17, BattingAvg: 0.307, OBP: 0.373, SLG: 0.536},
+		{Year: 2024, TeamID: 111, TeamName: "Boston Red Sox", Age: 30, ValueScore: 61.0, GamesPlayed: 140, PlateAppearances: 598, AtBats: 535, Hits: 155, HomeRuns: 23, StolenBases: 14, BattingAvg: 0.290, OBP: 0.355, SLG: 0.491},
+		{Year: 2025, TeamID: 111, TeamName: "Boston Red Sox", Age: 31, ValueScore: 57.0, GamesPlayed: 134, PlateAppearances: 570, AtBats: 510, Hits: 145, HomeRuns: 18, StolenBases: 11, BattingAvg: 0.284, OBP: 0.344, SLG: 0.460},
+	} {
+		createTestSeasonStat(t, db, compTwo.ID, season)
+	}
+
+	retired := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     912400000 + int(nowSuffix%100000),
+		FirstName: fmt.Sprintf("CodexProjection%d", nowSuffix),
+		LastName:  "Retired",
+		Position:  "1B",
+		Active:    false,
+	})
+	createTestSeasonStat(t, db, retired.ID, testSeasonFixture{
+		Year:             2022,
+		TeamID:           138,
+		TeamName:         "St. Louis Cardinals",
+		Age:              42,
+		ValueScore:       34.0,
+		GamesPlayed:      109,
+		PlateAppearances: 412,
+		AtBats:           378,
+		Hits:             102,
+		HomeRuns:         17,
+		BattingAvg:       0.270,
+		OBP:              0.332,
+		SLG:              0.448,
+	})
+
+	t.Cleanup(func() {
+		cleanupTestPlayers(t, db, []int{
+			active.MLBID,
+			compOne.MLBID,
+			compTwo.MLBID,
+			retired.MLBID,
+		})
+	})
+
+	t.Run("returns populated projections for an active player", func(t *testing.T) {
+		response := hitGetProjectionEndpoint(t, db, fmt.Sprintf("/api/v1/players/%d/projection", active.ID), http.StatusOK)
+
+		require.Equal(t, active.ID, response.Data.Player.ID)
+		require.True(t, response.Data.Projection.Eligible)
+		require.Equal(t, "ready", response.Data.Projection.Status)
+		require.Empty(t, response.Data.Projection.Reason)
+		require.NotEmpty(t, response.Data.Projection.Points)
+		require.Len(t, response.Data.Projection.ConfidenceBand, len(response.Data.Projection.Points))
+		require.NotEmpty(t, response.Data.Projection.Comparables)
+		require.LessOrEqual(t, len(response.Data.Projection.Comparables), 5)
+		require.Equal(t, 2026, response.Data.Projection.Points[0].Year)
+		require.Equal(t, 30, response.Data.Projection.Points[0].Age)
+		require.True(t, response.Data.Projection.Points[0].IsProjection)
+		require.LessOrEqual(t, response.Data.Projection.ConfidenceBand[0].Lower, response.Data.Projection.Points[0].ValueScore)
+		require.GreaterOrEqual(t, response.Data.Projection.ConfidenceBand[0].Upper, response.Data.Projection.Points[0].ValueScore)
+	})
+
+	t.Run("returns 200 with an ineligible payload for retired players", func(t *testing.T) {
+		response := hitGetProjectionEndpoint(t, db, fmt.Sprintf("/api/v1/players/%d/projection", retired.ID), http.StatusOK)
+
+		require.Equal(t, retired.ID, response.Data.Player.ID)
+		require.False(t, response.Data.Projection.Eligible)
+		require.Equal(t, "ineligible", response.Data.Projection.Status)
+		require.Equal(t, "player is not active", response.Data.Projection.Reason)
+		require.Empty(t, response.Data.Projection.Points)
+		require.Empty(t, response.Data.Projection.ConfidenceBand)
+		require.Empty(t, response.Data.Projection.Comparables)
+	})
+
+	t.Run("returns 400 when the player id is not numeric", func(t *testing.T) {
+		rec := hitProjectionEndpointRaw(t, db, "/api/v1/players/abc/projection")
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.JSONEq(t, `{"error":"invalid player id"}`, rec.Body.String())
+	})
+
+	t.Run("returns 404 when the player does not exist", func(t *testing.T) {
+		rec := hitProjectionEndpointRaw(t, db, "/api/v1/players/999999999/projection")
+
+		require.Equal(t, http.StatusNotFound, rec.Code)
+		require.JSONEq(t, `{"error":"player not found"}`, rec.Body.String())
+	})
+
+	t.Run("returns 500 when the player lookup fails for a database error", func(t *testing.T) {
+		failingDB := testHandlersDB(t)
+		sqlDB, err := failingDB.DB()
+		require.NoError(t, err)
+		require.NoError(t, sqlDB.Close())
+
+		rec := hitProjectionEndpointRaw(t, failingDB, "/api/v1/players/1/projection")
+
+		require.Equal(t, http.StatusInternalServerError, rec.Code)
+		require.Contains(t, rec.Body.String(), `"error":`)
+	})
+}
+
 func hitGetPlayerEndpoint(t *testing.T, db *gorm.DB, path string, expectedStatus int) playerDetailTestResponse {
 	t.Helper()
 
@@ -1140,7 +1333,33 @@ func hitGetCareerArcEndpoint(t *testing.T, db *gorm.DB, path string, expectedSta
 	return response
 }
 
+func hitGetProjectionEndpoint(t *testing.T, db *gorm.DB, path string, expectedStatus int) projectionTestResponse {
+	t.Helper()
+
+	rec := hitProjectionEndpointRaw(t, db, path)
+	require.Equal(t, expectedStatus, rec.Code)
+
+	var response projectionTestResponse
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &response))
+
+	return response
+}
+
 func hitCareerArcEndpointRaw(t *testing.T, db *gorm.DB, path string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	e := echo.New()
+	RegisterRoutes(e, db, syncjob.NewStatusStore(false), "super-secret")
+
+	req := httptest.NewRequest(http.MethodGet, path, nil)
+	rec := httptest.NewRecorder()
+
+	e.ServeHTTP(rec, req)
+
+	return rec
+}
+
+func hitProjectionEndpointRaw(t *testing.T, db *gorm.DB, path string) *httptest.ResponseRecorder {
 	t.Helper()
 
 	e := echo.New()

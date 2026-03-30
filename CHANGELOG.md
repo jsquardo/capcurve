@@ -1,6 +1,24 @@
 ## [2026-03-28] — Session Summary
 
 ### Added
+- Added a dedicated `GET /api/v1/players/:id/projection` endpoint that returns a `player` header plus a populated projection payload with forecast points, confidence bands, and comparable-player metadata
+- Added a new backend projection engine that blends a role-aware age curve, exponentially weighted recent performance, comparable-player matching, and confidence-band fallbacks when comparable futures are sparse
+- Added backend integration coverage for active-player projection responses, retired-player ineligibility responses, invalid ids, missing players, and forced database failures
+- Added projection-service unit coverage for quality-threshold comparable filtering, no-comparable confidence-band fallback behavior, and retired-player ineligibility handling
+
+### Changed
+- Updated the player routes to expose `GET /api/v1/players/:id/projection` under the versioned `/api/v1` group
+- Updated `AGENTS.md` Current State so the next session wires the `/career-arc` projection block to the real projection engine after the dedicated endpoint is stable
+
+### Fixed
+- Fixed comparable-player selection so the projection engine returns only matches that pass the distance threshold and never pads the response with low-quality comparables just to hit a target count
+
+### Notes
+- Verified with `make test`
+
+## [2026-03-28] — Session Summary
+
+### Added
 - Added backend integration coverage proving `GET /api/v1/players/:id/career-arc` uses the in-window peak season score when the overall timeline max lives outside `peak_year_start..peak_year_end`
 - Added backend integration coverage for the closed-database `500` branch on `GET /api/v1/players/:id/career-arc`
 
@@ -546,3 +564,19 @@
 - Tested directly against Shohei Ohtani (`660271`), Aaron Judge (`592450`), and Albert Pujols (`405395`) using `people`, `stats`, `transactions`, and `hydrate=transactions` endpoints
 - Albert Pujols transaction coverage only reached back to 2009 despite his MLB debut on April 2, 2001, so older transaction history should not be treated as complete
 - No tests were run because this session only changed repository documentation/state tracking
+
+## [2026-03-30] — Session Summary
+
+### Added
+- Added projection-service regression coverage proving active-player candidates are excluded from comparable matching even when their trajectory would otherwise qualify
+
+### Changed
+- Restricted projection comparable-player selection to historical or retired players by filtering on `players.active = false` before distance scoring
+- Updated `AGENTS.md` Current State so wiring the real projection engine into `GET /api/v1/players/:id/career-arc` is now the next Phase 2 task
+
+### Fixed
+- Prevented active-player futures from influencing projection confidence bands that are supposed to be anchored by completed career outcomes
+
+### Notes
+- The projection engine still requires comparable candidates to have a valid anchor season plus at least one later season, so retired-only filtering works alongside the existing future-outcome guardrails
+- Ran `GOCACHE=/tmp/capcurve-gocache go test ./internal/projection` and `make test` successfully

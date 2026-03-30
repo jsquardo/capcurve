@@ -18,6 +18,7 @@ func RegisterRoutes(e *echo.Echo, db *gorm.DB, syncStatus *syncjob.StatusStore, 
 	players := api.Group("/players")
 	players.GET("", h.ListPlayers)
 	players.GET("/:id", h.GetPlayer)
+	players.GET("/:id/projection", h.GetProjection)
 
 	api.GET("/players/:id/career-arc", h.GetCareerArc)
 	api.GET("/players/:id/contracts", h.GetPlayerContracts)

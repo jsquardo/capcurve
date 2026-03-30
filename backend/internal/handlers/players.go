@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jsquardo/capcurve/internal/models"
+	"github.com/jsquardo/capcurve/internal/projection"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -73,6 +74,10 @@ type careerArcResponse struct {
 	Data careerArcData `json:"data"`
 }
 
+type projectionResponse struct {
+	Data projectionData `json:"data"`
+}
+
 type playerDetailItem struct {
 	ID           uint                   `json:"id"`
 	MLBID        int                    `json:"mlb_id"`
@@ -94,6 +99,11 @@ type careerArcData struct {
 	Arc        *careerArcMetadata      `json:"arc"`
 	Timeline   []careerArcTimelineItem `json:"timeline"`
 	Projection careerArcProjection     `json:"projection"`
+}
+
+type projectionData struct {
+	Player     careerArcPlayerItem `json:"player"`
+	Projection careerArcProjection `json:"projection"`
 }
 
 type careerArcPlayerItem struct {
@@ -755,6 +765,52 @@ func newCareerArcProjection(active bool) careerArcProjection {
 	return projection
 }
 
+func newProjectionData(player models.Player, projection careerArcProjection) projectionData {
+	return projectionData{
+		Player:     newCareerArcPlayerItem(player),
+		Projection: projection,
+	}
+}
+
+func newProjectionPayload(result projection.Result) careerArcProjection {
+	payload := careerArcProjection{
+		Status:         result.Status,
+		Eligible:       result.Eligible,
+		Reason:         result.Reason,
+		Points:         make([]careerArcProjectionPoint, 0, len(result.Points)),
+		ConfidenceBand: make([]careerArcConfidenceBand, 0, len(result.ConfidenceBand)),
+		Comparables:    make([]careerArcComparablePlayer, 0, len(result.Comparables)),
+	}
+
+	for _, point := range result.Points {
+		payload.Points = append(payload.Points, careerArcProjectionPoint{
+			Year:         point.Year,
+			Age:          point.Age,
+			ValueScore:   point.ValueScore,
+			IsProjection: true,
+		})
+	}
+
+	for _, band := range result.ConfidenceBand {
+		payload.ConfidenceBand = append(payload.ConfidenceBand, careerArcConfidenceBand{
+			Year:  band.Year,
+			Lower: band.Lower,
+			Upper: band.Upper,
+		})
+	}
+
+	for _, comparable := range result.Comparables {
+		payload.Comparables = append(payload.Comparables, careerArcComparablePlayer{
+			PlayerID: comparable.PlayerID,
+			MLBID:    comparable.MLBID,
+			FullName: comparable.FullName,
+			Position: comparable.Position,
+		})
+	}
+
+	return payload
+}
+
 func newPlayerHittingStats(stat models.SeasonStat) *playerHittingStats {
 	if stat.PlateAppearances <= 0 {
 		return nil
@@ -849,6 +905,50 @@ func (h *Handler) GetCareerArc(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, careerArcResponse{
 		Data: newCareerArcData(player, stats, arc),
+	})
+}
+
+func (h *Handler) GetProjection(c echo.Context) error {
+	playerID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid player id"})
+	}
+
+	var player models.Player
+	if err := h.db.First(&player, playerID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "player not found"})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	var history []models.SeasonStat
+	if err := h.db.Where("player_id = ?", player.ID).Order("year ASC, id ASC").Find(&history).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	service := projection.NewService()
+	result := projection.Result{}
+
+	if !player.Active || len(history) == 0 {
+		result = service.Build(player, history, nil, nil)
+	} else {
+		var candidates []models.Player
+		if err := h.db.Where("id <> ?", player.ID).Find(&candidates).Error; err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
+		var candidateStats []models.SeasonStat
+		if err := h.db.Where("player_id <> ?", player.ID).Order("player_id ASC, year ASC, id ASC").Find(&candidateStats).Error; err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
+		result = service.Build(player, history, candidates, candidateStats)
+	}
+
+	return c.JSON(http.StatusOK, projectionResponse{
+		Data: newProjectionData(player, newProjectionPayload(result)),
 	})
 }
 
