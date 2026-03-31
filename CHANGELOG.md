@@ -1,3 +1,20 @@
+## [2026-03-31] — Session Summary
+
+### Added
+- Added regression coverage for the leaderboard default-season boundary on September 30, October 1, and a later postseason date
+
+### Changed
+- Updated `backend/internal/handlers/leaderboards.go` so season-based leaderboard requests use October 1 as the completed-regular-season cutoff instead of waiting until November
+- Re-ingested the standard local seed players after the reset Docker database so real-data endpoint checks can run against live player rows again
+- Updated `AGENTS.md` Current State so the next session resumes with `GET /api/v1/playground/query`
+
+### Fixed
+- Fixed the default leaderboard season logic so October and postseason requests now return the current MLB year instead of incorrectly falling back to the prior season
+
+### Notes
+- Verified with `make test`
+- Verified the reset local database contains MLB IDs `118120`, `115135`, `405395`, `434378`, `592450`, `660271`, and `665742`
+
 ## [2026-03-30] — Session Summary
 
 ### Added

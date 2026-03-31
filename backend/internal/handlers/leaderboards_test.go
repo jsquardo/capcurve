@@ -298,6 +298,38 @@ func TestRemovedDeferredContractRoutes(t *testing.T) {
 	}
 }
 
+func TestDefaultLeaderboardSeasonUsesOctoberFirstCutoff(t *testing.T) {
+	location := time.FixedZone("EDT", -4*60*60)
+
+	testCases := []struct {
+		name string
+		now  time.Time
+		want int
+	}{
+		{
+			name: "before cutoff uses prior year",
+			now:  time.Date(2026, time.September, 30, 23, 59, 59, 0, location),
+			want: 2025,
+		},
+		{
+			name: "cutoff day uses current year",
+			now:  time.Date(2026, time.October, 1, 0, 0, 0, 0, location),
+			want: 2026,
+		},
+		{
+			name: "postseason stays on current year",
+			now:  time.Date(2026, time.October, 15, 12, 0, 0, 0, location),
+			want: 2026,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, defaultLeaderboardSeason(tc.now))
+		})
+	}
+}
+
 type leaderboardTestResponse struct {
 	Data leaderboardTestData `json:"data"`
 }

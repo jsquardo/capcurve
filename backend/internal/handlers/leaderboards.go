@@ -241,9 +241,10 @@ func leaderboardSeason(params leaderboardParams, now time.Time) int {
 }
 
 func defaultLeaderboardSeason(now time.Time) int {
-	// The regular season is only complete once the calendar reaches the postseason
-	// window, so in-season and spring requests should fall back to the prior year.
-	if now.Month() >= time.November {
+	// Season-based leaderboards should expose the just-finished regular season as
+	// soon as the calendar reaches October 1, which is the project's explicit
+	// postseason cutoff for default leaderboard queries.
+	if now.Month() > time.September {
 		return now.Year()
 	}
 
