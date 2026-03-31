@@ -731,3 +731,19 @@
 ### Notes
 - `peak_arc` now computes leaderboard value from `season_stats.value_score` inside the stored career-arc peak window and falls back to the player's overall max season value score only if the peak window has no matching rows
 - Ran `make test` successfully
+
+## [2026-03-31] — Session Summary
+
+### Added
+- Added regression coverage for `group=all` playground-query workload filters so zero-workload hitter rows cannot satisfy `max_ip` and zero-workload pitcher rows cannot satisfy `max_pa`
+
+### Changed
+- Updated `GET /api/v1/playground/query` so `group=all` requires real workload when callers use direct workload filters (`min_pa`/`max_pa` and `min_ip`/`max_ip`), matching the existing threshold-family guard behavior
+- Updated `AGENTS.md` Current State so `GET /api/v1/playground/compare` is now the next Phase 2 task
+
+### Fixed
+- Closed the remaining `group=all` cross-role leak where stored zeroes could satisfy workload max filters for the wrong role
+
+### Notes
+- `group=all` still allows true two-way rows to participate in both workload families because the guard keys off actual workload presence, not listed position
+- Ran `make test` successfully

@@ -286,6 +286,34 @@ func TestGetPlaygroundQueryEndpoint(t *testing.T) {
 		require.Empty(t, response.Data)
 	})
 
+	t.Run("group all pitching workload filters ignore zero workload hitter rows", func(t *testing.T) {
+		path := fmt.Sprintf(
+			"/api/v1/playground/query?q=%s&group=all&team=147&max_ip=1.00",
+			hitterPrefix,
+		)
+		response := hitPlaygroundQueryEndpoint(t, db, path, http.StatusOK)
+
+		require.EqualValues(t, 0, response.Meta.Total)
+		require.Equal(t, 1, response.Meta.Page)
+		require.Equal(t, 25, response.Meta.PageSize)
+		require.Equal(t, 0, response.Meta.TotalPages)
+		require.Empty(t, response.Data)
+	})
+
+	t.Run("group all hitting workload filters ignore zero workload pitcher rows", func(t *testing.T) {
+		path := fmt.Sprintf(
+			"/api/v1/playground/query?q=%s&group=all&team=Mets&active=false&max_pa=5",
+			pitcherPrefix,
+		)
+		response := hitPlaygroundQueryEndpoint(t, db, path, http.StatusOK)
+
+		require.EqualValues(t, 0, response.Meta.Total)
+		require.Equal(t, 1, response.Meta.Page)
+		require.Equal(t, 25, response.Meta.PageSize)
+		require.Equal(t, 0, response.Meta.TotalPages)
+		require.Empty(t, response.Data)
+	})
+
 	t.Run("rejects pitching thresholds for group hitting", func(t *testing.T) {
 		rec := hitPlaygroundQueryEndpointRaw(t, db, "/api/v1/playground/query?group=hitting&min_era=3.00")
 

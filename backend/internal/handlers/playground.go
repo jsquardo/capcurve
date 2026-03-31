@@ -375,10 +375,10 @@ func (h *Handler) buildPlaygroundQuery(params playgroundQueryParams) *gorm.DB {
 	}
 
 	if params.Group == "all" {
-		if hasHittingThresholds(params) {
+		if hasHittingThresholds(params) || hasHittingWorkloadFilters(params) {
 			query = query.Where("season_stats.plate_appearances > 0")
 		}
-		if hasPitchingThresholds(params) {
+		if hasPitchingThresholds(params) || hasPitchingWorkloadFilters(params) {
 			query = query.Where("season_stats.innings_pitched > 0")
 		}
 	}
@@ -655,12 +655,20 @@ func hasPitchingThresholds(params playgroundQueryParams) bool {
 		params.MinK9 != nil || params.MaxK9 != nil
 }
 
+func hasPitchingWorkloadFilters(params playgroundQueryParams) bool {
+	return params.MinIP != nil || params.MaxIP != nil
+}
+
 func hasHittingThresholds(params playgroundQueryParams) bool {
 	return params.MinHR != nil || params.MaxHR != nil ||
 		params.MinAvg != nil || params.MaxAvg != nil ||
 		params.MinOBP != nil || params.MaxOBP != nil ||
 		params.MinSLG != nil || params.MaxSLG != nil ||
 		params.MinSB != nil || params.MaxSB != nil
+}
+
+func hasHittingWorkloadFilters(params playgroundQueryParams) bool {
+	return params.MinPA != nil || params.MaxPA != nil
 }
 
 func playgroundQueryParamError(err error) string {
