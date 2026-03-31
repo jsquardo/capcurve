@@ -1,6 +1,38 @@
 ## [2026-03-31] — Session Summary
 
 ### Added
+- Added backend regression coverage proving `group=all` pitching max filters no longer match hitter-only rows with zero pitching workload
+- Added backend regression coverage proving `group=all` hitting max filters no longer match pitcher-only rows with zero hitting workload
+
+### Changed
+- Updated `backend/internal/handlers/playground.go` so `group=all` implicitly adds `plate_appearances > 0` for hitter-threshold filters and `innings_pitched > 0` for pitcher-threshold filters
+- Updated `AGENTS.md` Current State so the next session resumes with `GET /api/v1/playground/compare`
+
+### Fixed
+- Fixed `GET /api/v1/playground/query` so mixed workload rows cannot satisfy unrelated max-threshold families under `group=all` just because unused stat columns store zeroes
+
+### Notes
+- Verified with `make test`
+
+## [2026-03-31] — Session Summary
+
+### Added
+- Added backend regression coverage proving `GET /api/v1/playground/query?limit=2&offset=1` returns the exact second-row slice instead of snapping back to the first page boundary
+
+### Changed
+- Updated `backend/internal/handlers/playground.go` to keep the caller's explicit offset for SQL pagination while preserving the existing `{ data, meta }` response contract
+- Updated `backend/internal/handlers/playground.go` with the required orientation comment documenting that playground query rows are shaped by workload presence, not `player.position`
+- Updated `AGENTS.md` Current State so the next session resumes with `group=all` threshold behavior on `GET /api/v1/playground/query`
+
+### Fixed
+- Fixed `GET /api/v1/playground/query` so offset-based requests now honor non-boundary offsets instead of snapping to derived page boundaries
+
+### Notes
+- Verified with `make test`
+
+## [2026-03-31] — Session Summary
+
+### Added
 - Added `GET /api/v1/playground/query` with contract-independent filter support for search, group, position, team, active status, season or era range, age range, workload bounds, value score, hitter thresholds, and pitcher thresholds
 - Added backend regression coverage for playground query filtering, `/players`-style pagination metadata, `limit`/`offset` compatibility, and invalid filter-combination handling
 

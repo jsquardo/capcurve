@@ -47,6 +47,7 @@ type playgroundQueryParams struct {
 	MaxK9         *float64
 	Page          int
 	PageSize      int
+	Offset        int
 	Sort          string
 }
 
@@ -125,7 +126,7 @@ func (h *Handler) GetPlaygroundQuery(c echo.Context) error {
 	if err := h.buildPlaygroundOrderedQuery(params).
 		Select(playgroundQuerySelectColumns()).
 		Limit(params.PageSize).
-		Offset(playerListOffset(playerListParams{Page: params.Page, PageSize: params.PageSize})).
+		Offset(params.paginationOffset()).
 		Scan(&rows).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -303,6 +304,7 @@ func parsePlaygroundQueryParams(c echo.Context) (playgroundQueryParams, error) {
 			if err != nil || parsed < 0 {
 				return playgroundQueryParams{}, echo.NewHTTPError(http.StatusBadRequest, "invalid offset value")
 			}
+			params.Offset = parsed
 			params.Page = (parsed / params.PageSize) + 1
 		}
 	}
@@ -371,6 +373,16 @@ func (h *Handler) buildPlaygroundQuery(params playgroundQueryParams) *gorm.DB {
 	if params.AgeMax != nil {
 		query = query.Where("season_stats.age <= ?", *params.AgeMax)
 	}
+
+	if params.Group == "all" {
+		if hasHittingThresholds(params) {
+			query = query.Where("season_stats.plate_appearances > 0")
+		}
+		if hasPitchingThresholds(params) {
+			query = query.Where("season_stats.innings_pitched > 0")
+		}
+	}
+
 	if params.MinPA != nil {
 		query = query.Where("season_stats.plate_appearances >= ?", *params.MinPA)
 	}
@@ -566,6 +578,8 @@ func (r playgroundQueryRow) toResponse() playgroundQueryItem {
 		SweetSpotPct:       r.SweetSpotPct,
 	}
 
+	// Workload presence, not listed position, decides whether a row behaves like
+	// a hitter, pitcher, or two-way season in the playground response.
 	return playgroundQueryItem{
 		Player: playgroundQueryPlayerItem{
 			ID:        r.PlayerID,
@@ -589,6 +603,14 @@ func (r playgroundQueryRow) toResponse() playgroundQueryItem {
 		Hitting:  newPlayerHittingStats(stat),
 		Pitching: newPlayerPitchingStats(stat),
 	}
+}
+
+func (p playgroundQueryParams) paginationOffset() int {
+	if p.Offset > 0 {
+		return p.Offset
+	}
+
+	return playerListOffset(playerListParams{Page: p.Page, PageSize: p.PageSize})
 }
 
 func parseOptionalIntQuery(c echo.Context, key string) (*int, error) {

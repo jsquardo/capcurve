@@ -147,12 +147,44 @@ func TestGetPlaygroundQueryEndpoint(t *testing.T) {
 		StrikePercentage:   64.2,
 	})
 
+	pitcherThree := createTestPlayer(t, db, testPlayerFixture{
+		MLBID:     914500000 + int(nowSuffix%100000),
+		FirstName: pitcherPrefix,
+		LastName:  "Control",
+		Position:  "SP",
+		Active:    false,
+	})
+	createTestSeasonStat(t, db, pitcherThree.ID, testSeasonFixture{
+		Year:               2021,
+		TeamID:             121,
+		TeamName:           "New York Mets",
+		Age:                30,
+		ValueScore:         76.3,
+		GamesPlayed:        31,
+		GamesStarted:       31,
+		Wins:               16,
+		Losses:             8,
+		ERA:                2.95,
+		WHIP:               1.05,
+		InningsPitched:     189.1,
+		HitsAllowed:        149,
+		WalksAllowed:       36,
+		HomeRunsAllowed:    15,
+		StrikeoutsPer9:     10.2,
+		WalksPer9:          1.7,
+		HitsPer9:           7.1,
+		HomeRunsPer9:       0.7,
+		StrikeoutWalkRatio: 6.00,
+		StrikePercentage:   69.1,
+	})
+
 	t.Cleanup(func() {
 		cleanupTestPlayers(t, db, []int{
 			hitterOne.MLBID,
 			hitterTwo.MLBID,
 			pitcherOne.MLBID,
 			pitcherTwo.MLBID,
+			pitcherThree.MLBID,
 		})
 	})
 
@@ -184,7 +216,7 @@ func TestGetPlaygroundQueryEndpoint(t *testing.T) {
 
 	t.Run("returns filtered pitcher rows and offset pagination compatibility", func(t *testing.T) {
 		path := fmt.Sprintf(
-			"/api/v1/playground/query?q=%s&group=pitching&team=Mets&active=false&min_ip=150&max_era=3.00&min_k9=10.0&sort=era&limit=1&offset=0",
+			"/api/v1/playground/query?q=%s&group=pitching&team=Mets&active=false&season=2022&min_ip=150&max_era=3.00&min_k9=10.0&sort=era&limit=1&offset=0",
 			pitcherPrefix,
 		)
 		response := hitPlaygroundQueryEndpoint(t, db, path, http.StatusOK)
@@ -202,6 +234,56 @@ func TestGetPlaygroundQueryEndpoint(t *testing.T) {
 		require.NotNil(t, row.Pitching)
 		require.Equal(t, 2.88, row.Pitching.ERA)
 		require.Equal(t, 10.7, row.Pitching.StrikeoutsPer9)
+	})
+
+	t.Run("uses the caller offset without snapping to page boundaries", func(t *testing.T) {
+		path := fmt.Sprintf(
+			"/api/v1/playground/query?q=%s&group=pitching&team=Mets&active=false&min_ip=150&max_era=3.00&min_k9=10.0&sort=era&limit=2&offset=1",
+			pitcherPrefix,
+		)
+		response := hitPlaygroundQueryEndpoint(t, db, path, http.StatusOK)
+
+		require.EqualValues(t, 2, response.Meta.Total)
+		require.Equal(t, 1, response.Meta.Page)
+		require.Equal(t, 2, response.Meta.PageSize)
+		require.Equal(t, 1, response.Meta.TotalPages)
+		require.Len(t, response.Data, 1)
+
+		row := response.Data[0]
+		require.Equal(t, pitcherThree.ID, row.Player.ID)
+		require.Equal(t, 2021, row.Season.Year)
+		require.Nil(t, row.Hitting)
+		require.NotNil(t, row.Pitching)
+		require.Equal(t, 2.95, row.Pitching.ERA)
+		require.Equal(t, 10.2, row.Pitching.StrikeoutsPer9)
+	})
+
+	t.Run("group all pitching thresholds ignore zero workload hitter rows", func(t *testing.T) {
+		path := fmt.Sprintf(
+			"/api/v1/playground/query?q=%s&group=all&team=147&max_era=1.00",
+			hitterPrefix,
+		)
+		response := hitPlaygroundQueryEndpoint(t, db, path, http.StatusOK)
+
+		require.EqualValues(t, 0, response.Meta.Total)
+		require.Equal(t, 1, response.Meta.Page)
+		require.Equal(t, 25, response.Meta.PageSize)
+		require.Equal(t, 0, response.Meta.TotalPages)
+		require.Empty(t, response.Data)
+	})
+
+	t.Run("group all hitting thresholds ignore zero workload pitcher rows", func(t *testing.T) {
+		path := fmt.Sprintf(
+			"/api/v1/playground/query?q=%s&group=all&team=Mets&active=false&max_obp=0.050",
+			pitcherPrefix,
+		)
+		response := hitPlaygroundQueryEndpoint(t, db, path, http.StatusOK)
+
+		require.EqualValues(t, 0, response.Meta.Total)
+		require.Equal(t, 1, response.Meta.Page)
+		require.Equal(t, 25, response.Meta.PageSize)
+		require.Equal(t, 0, response.Meta.TotalPages)
+		require.Empty(t, response.Data)
 	})
 
 	t.Run("rejects pitching thresholds for group hitting", func(t *testing.T) {
