@@ -1,6 +1,55 @@
 ## [2026-03-31] — Session Summary
 
 ### Added
+- Added a prototype-style gold ticker bar beneath the homepage hero using illustrative inline items and the existing token system
+
+### Changed
+- Rebuilt the homepage hero to follow the prototype structure more closely: full-bleed layout, strict two-column split, oversized display headline, and a single elevated featured-player chart panel
+- Updated `AGENTS.md` Current State so the next session resumes with the homepage sections below the new hero and ticker
+
+### Fixed
+- Fixed the homepage top area so it no longer reads as a rounded card with a third-column rail and instead matches the prototype’s edge-to-edge hero composition much more closely
+
+### Notes
+- Verified with `docker compose exec frontend npm run type-check`
+- Verified with `docker compose exec frontend npm run build`
+- Verified with `make test`
+
+## [2026-03-31] — Session Summary
+
+### Added
+- Added a hero-first homepage section with editorial copy, CTA buttons, supporting signal cards, and a featured-player arc panel built with real `Recharts` components and mock data
+
+### Changed
+- Updated `frontend/index.html` to apply the persisted `capcurve-theme` before React mounts so returning users see the correct theme on first paint
+- Updated `AGENTS.md` Current State so the next session resumes with the remaining homepage section scaffolding instead of repeating the shell polish work
+
+### Fixed
+- Fixed the shared frontend shell so the global `body` margin no longer leaves a browser gutter around the viewport
+- Fixed the homepage from a generic placeholder into a Phase 3 hero that matches the design brief’s live editorial/dashboard direction without depending on unfinished homepage APIs
+
+### Notes
+- Verified with `docker compose exec frontend npm run type-check`
+- Verified with `docker compose exec frontend npm run build`
+- Verified with `make test`
+
+## [2026-03-31] — Session Summary
+
+### Added
+- Added reviewer follow-up tasks to `AGENTS.md` Current State for the shared frontend shell: resetting the global body margin and applying the persisted theme before first paint
+
+### Changed
+- Updated `AGENTS.md` so the next frontend session keeps the homepage work as the primary task while explicitly tracking the two Phase 3 shell polish items from review as secondary same-session fixes
+
+### Fixed
+- Closed the gap between the latest review report and the repo's session planning so the next coding agent sees the documented frontend follow-ups directly in Current State
+
+### Notes
+- No application code changed in this session; this was a documentation/state-tracking update only
+
+## [2026-03-31] — Session Summary
+
+### Added
 - Added a shared frontend theme foundation with semantic CSS-variable tokens, dark-theme defaults, minimal light-theme overrides, and reusable shell utility classes for future Phase 3 page work
 - Added a responsive shared `Layout` shell with a sticky navbar, mobile menu, presentational search field, footer, and a working light/dark theme toggle persisted in localStorage
 

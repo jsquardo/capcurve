@@ -6,6 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="CapCurve — MLB career arc visualizer and contract value tracker" />
     <title>CapCurve</title>
+    <script>
+      ;(() => {
+        const storedTheme = window.localStorage.getItem('capcurve-theme')
+        if (storedTheme === 'light') {
+          document.documentElement.dataset.theme = 'light'
+          return
+        }
+
+        document.documentElement.dataset.theme = 'dark'
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

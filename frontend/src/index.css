@@ -74,6 +74,7 @@
 
   body {
     @apply min-h-screen bg-transparent text-text;
+    margin: 0;
   }
 
   h1,
