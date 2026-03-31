@@ -1,6 +1,24 @@
 ## [2026-03-31] — Session Summary
 
 ### Added
+- Added `GET /api/v1/playground/query` with contract-independent filter support for search, group, position, team, active status, season or era range, age range, workload bounds, value score, hitter thresholds, and pitcher thresholds
+- Added backend regression coverage for playground query filtering, `/players`-style pagination metadata, `limit`/`offset` compatibility, and invalid filter-combination handling
+
+### Changed
+- Added a dedicated `backend/internal/handlers/playground.go` handler so Phase 2 playground API logic lives in a focused file instead of another shared helper bucket
+- Added a dedicated `backend/internal/handlers/playground_query_response.go` contract file so each playground query row returns nested `player`, `season`, `hitting`, and `pitching` objects
+- Updated `backend/internal/handlers/routes.go` to register `GET /api/v1/playground/query`
+- Updated `AGENTS.md` Current State so the next session resumes with `GET /api/v1/playground/compare`
+
+### Fixed
+- Fixed the playground query row scanner so pitcher K/9 and the other explicit aliased stat columns map cleanly into the response payload instead of zeroing under custom scan structs
+
+### Notes
+- Verified with `make test`
+
+## [2026-03-31] — Session Summary
+
+### Added
 - Added regression coverage for the leaderboard default-season boundary on September 30, October 1, and a later postseason date
 
 ### Changed
