@@ -309,21 +309,26 @@ func parsePlaygroundQueryParams(c echo.Context) (playgroundQueryParams, error) {
 		}
 	}
 
-	if params.Season != nil && (params.EraStart != nil || params.EraEnd != nil) {
-		return playgroundQueryParams{}, echo.NewHTTPError(http.StatusBadRequest, "season cannot be combined with era_start or era_end")
-	}
-	if params.EraStart != nil && params.EraEnd != nil && *params.EraStart > *params.EraEnd {
-		return playgroundQueryParams{}, echo.NewHTTPError(http.StatusBadRequest, "era_start must be less than or equal to era_end")
-	}
-	if params.AgeMin != nil && params.AgeMax != nil && *params.AgeMin > *params.AgeMax {
-		return playgroundQueryParams{}, echo.NewHTTPError(http.StatusBadRequest, "age_min must be less than or equal to age_max")
+	if err := validatePlaygroundSeasonAndAgeFilters(
+		params.Season,
+		params.EraStart,
+		params.EraEnd,
+		params.AgeMin,
+		params.AgeMax,
+	); err != nil {
+		return playgroundQueryParams{}, err
 	}
 
-	if params.Group == "hitting" && hasPitchingThresholds(params) {
-		return playgroundQueryParams{}, echo.NewHTTPError(http.StatusBadRequest, "pitching thresholds are not supported for group=hitting")
-	}
-	if params.Group == "pitching" && hasHittingThresholds(params) {
-		return playgroundQueryParams{}, echo.NewHTTPError(http.StatusBadRequest, "hitting thresholds are not supported for group=pitching")
+	if err := validatePlaygroundGroupFilters(
+		params.Group,
+		playgroundThresholdSupport{
+			HasHittingThresholds:       hasHittingThresholds(params),
+			HasPitchingThresholds:      hasPitchingThresholds(params),
+			HasHittingWorkloadFilters:  hasHittingWorkloadFilters(params),
+			HasPitchingWorkloadFilters: hasPitchingWorkloadFilters(params),
+		},
+	); err != nil {
+		return playgroundQueryParams{}, err
 	}
 
 	if !isSupportedPlaygroundSort(params.Sort) {

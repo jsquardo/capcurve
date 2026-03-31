@@ -1,6 +1,21 @@
 ## [2026-03-31] — Session Summary
 
 ### Added
+- Added `GET /api/v1/playground/compare` with compare-specific `{ data: [{ player, seasons[] }] }` responses and regression coverage for request-order preservation, filtered empty timelines, missing-player `404`s, and validation errors
+
+### Changed
+- Updated the playground handler validation flow to share season/age and group/filter checks between query and compare parsing
+- Updated `AGENTS.md` Current State so the next session resumes with the first Phase 3 frontend shell work
+
+### Fixed
+- Fixed `GET /api/v1/playground/query` so cross-role workload filters now return the same `{"error":"..."}` envelope as the other invalid filter combinations instead of slipping past validation
+
+### Notes
+- Verified with `make test`
+
+## [2026-03-31] — Session Summary
+
+### Added
 - Added backend regression coverage proving `group=all` pitching max filters no longer match hitter-only rows with zero pitching workload
 - Added backend regression coverage proving `group=all` hitting max filters no longer match pitcher-only rows with zero hitting workload
 

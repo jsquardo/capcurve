@@ -321,6 +321,20 @@ func TestGetPlaygroundQueryEndpoint(t *testing.T) {
 		require.JSONEq(t, `{"error":"pitching thresholds are not supported for group=hitting"}`, rec.Body.String())
 	})
 
+	t.Run("rejects pitching workload filters for group hitting", func(t *testing.T) {
+		rec := hitPlaygroundQueryEndpointRaw(t, db, "/api/v1/playground/query?group=hitting&min_ip=3.00")
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.JSONEq(t, `{"error":"pitching thresholds are not supported for group=hitting"}`, rec.Body.String())
+	})
+
+	t.Run("rejects hitting workload filters for group pitching", func(t *testing.T) {
+		rec := hitPlaygroundQueryEndpointRaw(t, db, "/api/v1/playground/query?group=pitching&min_pa=10")
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.JSONEq(t, `{"error":"hitting thresholds are not supported for group=pitching"}`, rec.Body.String())
+	})
+
 	t.Run("rejects season combined with era range", func(t *testing.T) {
 		rec := hitPlaygroundQueryEndpointRaw(t, db, "/api/v1/playground/query?season=2024&era_start=2023")
 

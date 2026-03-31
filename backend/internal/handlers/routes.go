@@ -22,6 +22,7 @@ func RegisterRoutes(e *echo.Echo, db *gorm.DB, syncStatus *syncjob.StatusStore, 
 
 	playground := api.Group("/playground")
 	playground.GET("/query", h.GetPlaygroundQuery)
+	playground.GET("/compare", h.GetPlaygroundCompare)
 
 	api.GET("/players/:id/career-arc", h.GetCareerArc)
 	api.GET("/leaderboards", h.GetLeaderboards)
