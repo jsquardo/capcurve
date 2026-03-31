@@ -1,6 +1,24 @@
 ## [2026-03-31] — Session Summary
 
 ### Added
+- Added a shared frontend theme foundation with semantic CSS-variable tokens, dark-theme defaults, minimal light-theme overrides, and reusable shell utility classes for future Phase 3 page work
+- Added a responsive shared `Layout` shell with a sticky navbar, mobile menu, presentational search field, footer, and a working light/dark theme toggle persisted in localStorage
+
+### Changed
+- Updated frontend Google font loading and global typography roles to match the design brief’s Bebas Neue, DM Sans, and DM Mono pairing
+- Updated `frontend/tailwind.config.js` so Tailwind semantic colors resolve through CSS variables instead of hard-coded palette values
+- Updated `AGENTS.md` Current State so the next session resumes with homepage implementation inside the new shell
+
+### Fixed
+- Fixed the frontend foundation so future page work can share one responsive shell and token system instead of repeating layout structure and raw color choices page by page
+
+### Notes
+- Verified with `docker compose exec frontend npm run type-check`
+- Verified with `docker compose exec frontend npm run build`
+
+## [2026-03-31] — Session Summary
+
+### Added
 - Added `GET /api/v1/playground/compare` with compare-specific `{ data: [{ player, seasons[] }] }` responses and regression coverage for request-order preservation, filtered empty timelines, missing-player `404`s, and validation errors
 
 ### Changed

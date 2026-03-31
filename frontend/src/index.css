@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&family=Bebas+Neue&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,19 +8,98 @@
   --font-display: 'Bebas Neue';
   --font-body: 'DM Sans';
   --font-mono: 'DM Mono';
+
+  --color-bg: 10 13 18;
+  --color-bg-elevated: 17 21 32;
+  --color-bg-panel: 24 29 46;
+  --color-bg-overlay: 30 36 56;
+
+  --color-text: 232 238 248;
+  --color-text-muted: 138 154 184;
+  --color-text-subtle: 107 122 153;
+
+  --color-border: 37 45 66;
+  --color-border-strong: 52 63 91;
+
+  --color-accent: 240 192 64;
+  --color-accent-strong: 245 208 96;
+  --color-link: 88 166 255;
+  --color-success: 46 204 113;
+  --color-danger: 231 76 60;
+  --color-projection: 155 114 248;
+
+  --shadow-soft: 0 24px 60px rgba(0, 0, 0, 0.28);
+  --shadow-elevated: 0 32px 80px rgba(3, 8, 18, 0.42);
+  --gradient-page:
+    radial-gradient(circle at top right, rgba(240, 192, 64, 0.08), transparent 28%),
+    radial-gradient(circle at 30% 120%, rgba(88, 166, 255, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(17, 21, 32, 0.96) 0%, rgba(10, 13, 18, 1) 38%);
+  --gradient-hero-glow: radial-gradient(circle, rgba(240, 192, 64, 0.1) 0%, rgba(240, 192, 64, 0.02) 42%, transparent 72%);
+}
+
+:root[data-theme='light'] {
+  --color-bg: 244 245 248;
+  --color-bg-elevated: 255 255 255;
+  --color-bg-panel: 237 239 245;
+  --color-bg-overlay: 226 230 239;
+
+  --color-text: 19 24 34;
+  --color-text-muted: 82 94 119;
+  --color-text-subtle: 109 121 146;
+
+  --color-border: 213 219 231;
+  --color-border-strong: 185 194 213;
+
+  --gradient-page:
+    radial-gradient(circle at top right, rgba(240, 192, 64, 0.12), transparent 26%),
+    radial-gradient(circle at 20% 0%, rgba(88, 166, 255, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(244, 245, 248, 1) 100%);
+  --gradient-hero-glow: radial-gradient(circle, rgba(240, 192, 64, 0.16) 0%, rgba(240, 192, 64, 0.04) 45%, transparent 72%);
+  --shadow-soft: 0 18px 40px rgba(40, 51, 76, 0.1);
+  --shadow-elevated: 0 24px 56px rgba(40, 51, 76, 0.16);
 }
 
 @layer base {
-  * { box-sizing: border-box; }
+  * {
+    box-sizing: border-box;
+  }
+
   html {
-    @apply bg-surface text-white;
+    @apply bg-app text-text;
     font-family: var(--font-body), sans-serif;
     -webkit-font-smoothing: antialiased;
+    background-image: var(--gradient-page);
+    background-attachment: fixed;
   }
-  body { @apply min-h-screen; }
-  h1, h2, h3 {
+
+  body {
+    @apply min-h-screen bg-transparent text-text;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-display), sans-serif;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  ::selection {
+    background: rgb(var(--color-accent) / 0.28);
+    color: rgb(var(--color-text) / 1);
   }
 }
 
@@ -29,15 +108,48 @@
     font-family: var(--font-mono), monospace;
     @apply tabular-nums;
   }
+
   .card {
-    @apply bg-surface-raised rounded-xl border border-white/5 p-6;
+    @apply rounded-2xl border border-border/80 bg-elevated/90 p-6 backdrop-blur-sm;
+    box-shadow: var(--shadow-soft);
   }
+
+  .shell-container {
+    @apply mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-10;
+  }
+
+  .shell-panel {
+    @apply border-b border-border/70 bg-app/90 backdrop-blur-xl;
+  }
+
+  .nav-link {
+    @apply text-sm font-medium tracking-[0.02em] text-text-muted transition-colors hover:text-text;
+  }
+
+  .nav-link-active {
+    @apply text-text;
+  }
+
+  .shell-input {
+    @apply h-11 rounded-xl border border-border/80 bg-elevated/90 px-4 text-sm text-text outline-none transition focus:border-accent/80 focus:ring-2 focus:ring-accent/15;
+  }
+
+  .shell-button {
+    @apply inline-flex items-center justify-center rounded-xl border border-border/80 bg-elevated/90 text-text transition hover:border-border-strong hover:bg-panel/80;
+  }
+
+  .shell-button-accent {
+    @apply border-accent/50 bg-accent/10 text-accent hover:border-accent hover:bg-accent/15;
+  }
+
   .badge-value {
     @apply bg-value/20 text-value text-xs font-semibold px-2 py-1 rounded-full;
   }
+
   .badge-overpaid {
     @apply bg-overpaid/20 text-overpaid text-xs font-semibold px-2 py-1 rounded-full;
   }
+
   .badge-peak {
     @apply bg-peak/20 text-peak text-xs font-semibold px-2 py-1 rounded-full;
   }

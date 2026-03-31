@@ -1,34 +1,180 @@
+import { useEffect, useState } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
 
-export default function Layout() {
+type Theme = 'dark' | 'light'
+
+const NAV_ITEMS = [
+  { label: 'Home', to: '/' },
+  { label: 'Leaderboards', to: '/leaderboards' },
+] as const
+
+function SunIcon() {
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
-      <header className="border-b border-white/5 px-6 py-4">
-        <nav className="max-w-7xl mx-auto flex items-center justify-between">
-          <NavLink to="/" className="font-display text-3xl tracking-wide text-white">
-            CAP<span className="text-brand">CURVE</span>
-          </NavLink>
-          <div className="flex items-center gap-6 text-sm font-medium text-neutral">
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.75v2.5M12 18.75v2.5M21.25 12h-2.5M5.25 12h-2.5M18.54 5.46l-1.77 1.77M7.23 16.77l-1.77 1.77M18.54 18.54l-1.77-1.77M7.23 7.23 5.46 5.46" />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+      <path d="M20.5 14.16A8.5 8.5 0 1 1 9.84 3.5a6.75 6.75 0 1 0 10.66 10.66Z" />
+    </svg>
+  )
+}
+
+export default function Layout() {
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === 'undefined') {
+      return 'dark'
+    }
+
+    const storedTheme = window.localStorage.getItem('capcurve-theme')
+    return storedTheme === 'light' ? 'light' : 'dark'
+  })
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    window.localStorage.setItem('capcurve-theme', theme)
+  }, [theme])
+
+  function toggleTheme() {
+    setTheme((currentTheme) => (currentTheme === 'dark' ? 'light' : 'dark'))
+  }
+
+  function closeMobileMenu() {
+    setMobileOpen(false)
+  }
+
+  return (
+    <div className="min-h-screen bg-transparent text-text">
+      <header className="shell-panel sticky top-0 z-50">
+        <nav className="shell-container flex min-h-[72px] items-center gap-4 py-4">
+          <div className="flex min-w-0 flex-1 items-center gap-4 lg:gap-8">
             <NavLink
               to="/"
-              className={({ isActive }) => isActive ? 'text-white' : 'hover:text-white transition-colors'}
+              onClick={closeMobileMenu}
+              className="shrink-0 font-display text-[2rem] leading-none tracking-[0.14em] text-accent"
             >
-              Players
+              CAP<span className="text-text">CURVE</span>
             </NavLink>
-            <NavLink
-              to="/leaderboards"
-              className={({ isActive }) => isActive ? 'text-white' : 'hover:text-white transition-colors'}
+
+            <div className="hidden items-center gap-6 lg:flex">
+              {NAV_ITEMS.map((item) => (
+                <NavLink
+                  key={item.label}
+                  to={item.to}
+                  className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+              <span className="text-sm font-medium tracking-[0.02em] text-text-muted/75">Players</span>
+              <span className="text-sm font-medium tracking-[0.02em] text-text-muted/75">Stat Playground</span>
+            </div>
+          </div>
+
+          <div className="hidden min-w-0 flex-1 items-center justify-end gap-3 md:flex">
+            <div className="relative w-full max-w-xs">
+              <input
+                type="search"
+                placeholder="Search players..."
+                className="shell-input w-full pr-10"
+                aria-label="Search players"
+              />
+              <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-text-subtle">
+                ⌕
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="shell-button h-11 w-11"
+              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
             >
-              Leaderboards
-            </NavLink>
+              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+            </button>
+          </div>
+
+          <div className="ml-auto flex items-center gap-2 md:hidden">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="shell-button h-10 w-10"
+              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            >
+              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileOpen((open) => !open)}
+              className="shell-button h-10 w-10"
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-nav-panel"
+              aria-label="Toggle navigation menu"
+            >
+              <span className="text-lg leading-none">{mobileOpen ? '×' : '≡'}</span>
+            </button>
           </div>
         </nav>
+
+        {mobileOpen ? (
+          <div id="mobile-nav-panel" className="border-t border-border/70 md:hidden">
+            <div className="shell-container space-y-4 py-4">
+              <div className="space-y-3">
+                {NAV_ITEMS.map((item) => (
+                  <NavLink
+                    key={item.label}
+                    to={item.to}
+                    onClick={closeMobileMenu}
+                    className={({ isActive }) => `block text-base font-medium ${isActive ? 'text-text' : 'text-text-muted'}`}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+                <div className="text-base font-medium text-text-muted/75">Players</div>
+                <div className="text-base font-medium text-text-muted/75">Stat Playground</div>
+              </div>
+              <input
+                type="search"
+                placeholder="Search players..."
+                className="shell-input w-full"
+                aria-label="Search players"
+              />
+            </div>
+          </div>
+        ) : null}
       </header>
-      <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
-        <Outlet />
+
+      <main className="flex-1">
+        <div className="shell-container py-8 sm:py-10 lg:py-12">
+          <Outlet />
+        </div>
       </main>
-      <footer className="border-t border-white/5 px-6 py-4 text-center text-xs text-neutral">
-        CapCurve · MLB stats data via MLB Stats API
+
+      <footer className="border-t border-border/70 bg-app/80 backdrop-blur-sm">
+        <div className="shell-container flex flex-col gap-4 py-6 text-sm text-text-muted sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="font-display text-xl tracking-[0.12em] text-text">
+              CAP<span className="text-accent">CURVE</span>
+            </div>
+            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-text-subtle">
+              MLB career intelligence
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 text-xs sm:items-end">
+            <div className="flex gap-4">
+              <span>About</span>
+              <span>Data Sources</span>
+              <span>API</span>
+            </div>
+            <p>Data: MLB Stats API and Baseball Savant</p>
+          </div>
+        </div>
       </footer>
     </div>
   )
