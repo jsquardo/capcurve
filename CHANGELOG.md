@@ -1,6 +1,63 @@
 ## [2026-03-31] — Session Summary
 
 ### Added
+- Added a reviewer follow-up note to `AGENTS.md` Current State making the
+  homepage ticker width fix the top priority for the next frontend session
+
+### Changed
+- Updated `AGENTS.md` Current State so it now reflects the latest homepage
+  status: ticker above hero, homepage shell sections added, and the remaining
+  ticker full-viewport constraint called out explicitly
+- Updated `app-structure.md` to mark the Phase 3 homepage Trending Players,
+  Stat Leaders, and Articles / Insights checklist items as complete based on
+  the latest documented homepage build work
+
+### Fixed
+- Closed the gap between the latest homepage implementation and the planning
+  docs so the next agent sees the correct Phase 3 status and the correct top
+  priority polish item before writing code
+
+### Notes
+- No application code changed in this session; this was a review/documentation
+  update only
+
+## [2026-03-31] — Session Summary
+
+### Added
+- Added Trending Players section to homepage: tabbed (Hottest Arc Movement / Most Viewed), 4-player card grid with inline SVG sparklines and arc-delta badges
+- Added Stat Leaders + Feed section to homepage: pill-tab leaderboard (HR, AVG, ERA, K/9, OPS) with rank rows and relative progress bars; feed column with featured insight card and typed news/insight items
+- Added `SparkLine` SVG component for rendering sparkline charts inline without a chart library
+
+### Changed
+- Moved the live ticker from below the hero to above it, matching the prototype order (Nav → Ticker → Hero → Sections)
+- Updated ticker items from generic placeholder text to player-name + arc-delta format matching the prototype (e.g. "Elly De La Cruz · Arc +9.1 ▲")
+- Ticker now renders items doubled (`[...items, ...items]`) for a seamless infinite scroll loop
+
+### Fixed
+- n/a
+
+### Notes
+- All new sections use existing Tailwind tokens and CSS variables — no new colors or design system additions needed
+- Stat Leaders + Feed uses an inline `gridTemplateColumns: '1.1fr 1fr'` style (no Tailwind equivalent for non-integer ratios)
+- Suggested commit: `feat(frontend): add trending players, stat leaders, and feed sections to homepage`
+
+## [2026-03-31] — Session Summary
+
+### Added
+- Added reviewer-follow-up tasks to `AGENTS.md` Current State for the homepage shell container constraint and marquee loop behavior
+
+### Changed
+- Updated `AGENTS.md` Current State so the homepage status no longer overstates the hero as truly flush/full-bleed on wide screens
+
+### Fixed
+- Closed the gap between the review findings and the repo's next-session task list without changing application code
+
+### Notes
+- No application code changed in this session; this was a documentation/state-tracking update only
+
+## [2026-03-31] — Session Summary
+
+### Added
 - Added a prototype-style gold ticker bar beneath the homepage hero using illustrative inline items and the existing token system
 
 ### Changed

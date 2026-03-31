@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
+import { motion } from 'framer-motion'
+
+const tickerItems = [
+  { name: 'Elly De La Cruz', val: 'Arc +9.1', dir: '▲' },
+  { name: 'Paul Skenes', val: 'Arc +7.4', dir: '▲' },
+  { name: 'Aaron Judge', val: '58 HR', dir: '' },
+  { name: 'Bobby Witt Jr.', val: 'Arc +5.9', dir: '▲' },
+  { name: 'Shohei Ohtani', val: 'OPS 1.038', dir: '' },
+  { name: 'Jackson Chourio', val: 'Arc +6.8', dir: '▲' },
+  { name: 'Spencer Strider', val: 'ERA 2.11', dir: '' },
+  { name: 'Gunnar Henderson', val: 'Arc +4.2', dir: '▲' },
+]
 
 type Theme = 'dark' | 'light'
 
@@ -149,6 +161,27 @@ export default function Layout() {
           </div>
         ) : null}
       </header>
+
+      {/* Ticker lives here — outside shell-container so it's naturally full-width */}
+      <div className="overflow-hidden bg-accent py-2">
+        <motion.div
+          initial={{ x: '0%' }}
+          animate={{ x: '-50%' }}
+          transition={{ duration: 32, repeat: Infinity, ease: 'linear' }}
+          className="flex w-max whitespace-nowrap"
+        >
+          {[...tickerItems, ...tickerItems].map((item, index) => (
+            <div
+              key={index}
+              className="inline-flex items-center gap-[10px] border-r border-black/15 px-8 text-[12px] font-semibold tracking-[0.3px] text-[#0a0d12]"
+            >
+              <span>{item.name}</span>
+              <span className="font-mono text-[12px]">{item.val}</span>
+              {item.dir ? <span className="text-[10px] font-bold opacity-70">{item.dir}</span> : null}
+            </div>
+          ))}
+        </motion.div>
+      </div>
 
       <main className="flex-1">
         <div className="shell-container py-8 sm:py-10 lg:py-12">

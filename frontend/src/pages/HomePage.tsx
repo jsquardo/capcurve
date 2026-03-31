@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
@@ -12,6 +13,7 @@ import {
   YAxis,
 } from 'recharts'
 
+// --- Hero chart data ---
 const heroArcData = [
   { year: '2014', actual: 48, projected: null, lower: null, upper: null },
   { year: '2015', actual: 56, projected: null, lower: null, upper: null },
@@ -36,17 +38,6 @@ const featureStats = [
   { label: 'Projection Arc', value: 'Age 35', tone: 'danger' as const },
 ] as const
 
-const tickerItems = [
-  { label: 'Featured Arc', value: 'Mookie Betts', delta: 'LIVE MOCK' },
-  { label: 'Peak Window', value: '2018-2020', delta: '3-YR RUN' },
-  { label: 'Projection', value: '2025-2028', delta: '4 SEASONS' },
-  { label: 'Value Model', value: 'Beyond WAR', delta: 'MULTI-STAT' },
-  { label: 'Confidence Band', value: '48.0-74.0', delta: 'WIDENING' },
-  { label: 'Featured Arc', value: 'Mookie Betts', delta: 'LIVE MOCK' },
-  { label: 'Peak Window', value: '2018-2020', delta: '3-YR RUN' },
-  { label: 'Projection', value: '2025-2028', delta: '4 SEASONS' },
-] as const
-
 type FeatureStatTone = (typeof featureStats)[number]['tone']
 
 const statToneClassName: Record<FeatureStatTone, string> = {
@@ -55,26 +46,133 @@ const statToneClassName: Record<FeatureStatTone, string> = {
   danger: 'text-danger',
 }
 
+// --- Trending Players ---
+type TrendCard = {
+  rank: number
+  name: string
+  team: string
+  delta: string
+  bars: number[]
+  isViews?: boolean
+}
+
+const hotTrendData: TrendCard[] = [
+  { rank: 1, name: 'Elly De La Cruz', team: 'CIN · SS', delta: '+9.1 arc pts', bars: [30, 38, 42, 55, 60, 62, 58, 70, 82, 91] },
+  { rank: 2, name: 'Paul Skenes', team: 'PIT · SP', delta: '+7.4 arc pts', bars: [40, 48, 52, 60, 65, 70, 68, 75, 85, 88] },
+  { rank: 3, name: 'Jackson Chourio', team: 'MIL · OF', delta: '+6.8 arc pts', bars: [20, 25, 30, 38, 44, 50, 54, 60, 70, 78] },
+  { rank: 4, name: 'Bobby Witt Jr.', team: 'KC · SS', delta: '+5.9 arc pts', bars: [25, 32, 40, 50, 58, 62, 66, 70, 76, 84] },
+]
+
+const viewTrendData: TrendCard[] = [
+  { rank: 1, name: 'Shohei Ohtani', team: 'LAD · DH/SP', delta: '84.2k views', bars: [60, 65, 70, 72, 75, 80, 82, 85, 88, 90], isViews: true },
+  { rank: 2, name: 'Aaron Judge', team: 'NYY · RF', delta: '71.5k views', bars: [55, 62, 68, 74, 80, 84, 86, 88, 85, 82], isViews: true },
+  { rank: 3, name: 'Mike Trout', team: 'LAA · CF', delta: '58.3k views', bars: [48, 76, 80, 82, 88, 87, 91, 91, 90, 72], isViews: true },
+  { rank: 4, name: 'Fernando Tatis Jr.', team: 'SD · RF', delta: '44.1k views', bars: [35, 55, 72, 78, 65, 60, 68, 74, 78, 80], isViews: true },
+]
+
+// --- Stat Leaders ---
+type LeaderEntry = { n: string; t: string; v: number | string }
+type LeaderCategory = 'hr' | 'avg' | 'era' | 'k9' | 'ops'
+
+const leadersData: Record<LeaderCategory, LeaderEntry[]> = {
+  hr: [
+    { n: 'Aaron Judge', t: 'NYY', v: 58 },
+    { n: 'Shohei Ohtani', t: 'LAD', v: 54 },
+    { n: 'Kyle Schwarber', t: 'PHI', v: 47 },
+    { n: 'Pete Alonso', t: 'NYM', v: 46 },
+    { n: 'Yordan Alvarez', t: 'HOU', v: 45 },
+  ],
+  avg: [
+    { n: 'Luis Arraez', t: 'MIA', v: '.354' },
+    { n: 'Freddie Freeman', t: 'LAD', v: '.331' },
+    { n: 'Paul Goldschmidt', t: 'STL', v: '.317' },
+    { n: 'Rafael Devers', t: 'BOS', v: '.312' },
+    { n: 'Trea Turner', t: 'PHI', v: '.308' },
+  ],
+  era: [
+    { n: 'Spencer Strider', t: 'ATL', v: '2.11' },
+    { n: 'Zack Wheeler', t: 'PHI', v: '2.34' },
+    { n: 'Gerrit Cole', t: 'NYY', v: '2.56' },
+    { n: 'Sandy Alcantara', t: 'MIA', v: '2.70' },
+    { n: 'Kevin Gausman', t: 'SF', v: '2.81' },
+  ],
+  k9: [
+    { n: 'Spencer Strider', t: 'ATL', v: '13.7' },
+    { n: 'Corbin Burnes', t: 'BAL', v: '11.9' },
+    { n: 'Dylan Cease', t: 'SD', v: '11.4' },
+    { n: 'Julio Urías', t: 'LAD', v: '10.8' },
+    { n: 'Shane Bieber', t: 'CLE', v: '10.3' },
+  ],
+  ops: [
+    { n: 'Shohei Ohtani', t: 'LAD', v: '1.038' },
+    { n: 'Aaron Judge', t: 'NYY', v: '.999' },
+    { n: 'Yordan Alvarez', t: 'HOU', v: '.987' },
+    { n: 'Ronald Acuña Jr.', t: 'ATL', v: '.961' },
+    { n: 'Luis Robert Jr.', t: 'CWS', v: '.943' },
+  ],
+}
+
+const leaderCategories: { key: LeaderCategory; label: string }[] = [
+  { key: 'hr', label: 'HR' },
+  { key: 'avg', label: 'AVG' },
+  { key: 'era', label: 'ERA' },
+  { key: 'k9', label: 'K/9' },
+  { key: 'ops', label: 'OPS' },
+]
+
+// --- Feed ---
+type FeedItem = { type: 'insight' | 'news'; text: string; meta: string }
+
+const feedItems: FeedItem[] = [
+  { type: 'insight', text: "Paul Skenes is tracking as one of the fastest arc accelerations for a debut SP since Strasburg in 2010", meta: 'CapCurve · 6h' },
+  { type: 'news', text: 'Freddie Freeman agrees to 2-year extension through the 2027 season', meta: 'MLB.com · 4h' },
+  { type: 'insight', text: "Bobby Witt Jr.'s arc trajectory now mirrors a young Nolan Arenado at the same career stage", meta: 'CapCurve · 11h' },
+  { type: 'news', text: 'AL MVP race heating up: Judge and Witt lead advanced metrics in second half', meta: 'Baseball America · 14h' },
+]
+
+// --- SparkLine component ---
+function SparkLine({ bars }: { bars: number[] }) {
+  const max = Math.max(...bars)
+  const n = bars.length
+  const w = 100
+  const h = 38
+  const pts = bars.map((v, i) => `${(i / (n - 1)) * w},${h - (v / max) * h}`)
+  const area = pts.join(' ')
+  const fillPts = `0,${h} ${area} ${w},${h}`
+  const lastY = h - (bars[n - 1] / max) * h
+
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible">
+      <polygon points={fillPts} fill="rgba(240,192,64,0.08)" />
+      <polyline
+        points={area}
+        fill="none"
+        stroke="rgb(var(--color-accent))"
+        strokeWidth={2}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <circle cx={w} cy={lastY} r={3} fill="rgb(var(--color-accent))" />
+    </svg>
+  )
+}
+
+// --- Hero tooltip ---
 function HeroTooltip({
   active,
   payload,
   label,
 }: {
   active?: boolean
-  payload?: Array<{
-    dataKey?: string
-    value?: number | null
-  }>
+  payload?: Array<{ dataKey?: string; value?: number | null }>
   label?: string
 }) {
-  if (!active || !payload?.length) {
-    return null
-  }
+  if (!active || !payload?.length) return null
 
-  const actualPoint = payload.find((entry) => entry.dataKey === 'actual' && typeof entry.value === 'number')
-  const projectionPoint = payload.find((entry) => entry.dataKey === 'projected' && typeof entry.value === 'number')
-  const upperPoint = payload.find((entry) => entry.dataKey === 'upper' && typeof entry.value === 'number')
-  const lowerPoint = payload.find((entry) => entry.dataKey === 'lower' && typeof entry.value === 'number')
+  const actualPoint = payload.find((e) => e.dataKey === 'actual' && typeof e.value === 'number')
+  const projectionPoint = payload.find((e) => e.dataKey === 'projected' && typeof e.value === 'number')
+  const upperPoint = payload.find((e) => e.dataKey === 'upper' && typeof e.value === 'number')
+  const lowerPoint = payload.find((e) => e.dataKey === 'lower' && typeof e.value === 'number')
 
   return (
     <div className="rounded-xl border border-border/80 bg-app/95 px-4 py-3 shadow-[var(--shadow-soft)] backdrop-blur-sm">
@@ -104,191 +202,371 @@ function HeroTooltip({
 }
 
 export default function HomePage() {
+  const [trendTab, setTrendTab] = useState<'hot' | 'view'>('hot')
+  const [leaderCat, setLeaderCat] = useState<LeaderCategory>('hr')
+
+  const trendData = trendTab === 'hot' ? hotTrendData : viewTrendData
+  const leaders = leadersData[leaderCat]
+  const isNumericLeader = typeof leaders[0].v === 'number'
+
+  function leaderBarPct(i: number, v: number | string): number {
+    if (isNumericLeader) {
+      return Math.round((Number(v) / Number(leaders[0].v)) * 100)
+    }
+    // Rank-based width for string stat values (AVG, ERA, etc.)
+    return Math.round(((leaders.length - i) / leaders.length) * 85) + 15
+  }
+
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-10">
-      <section className="relative min-h-[520px] overflow-hidden border-b border-border">
-        <div className="pointer-events-none absolute -right-20 top-[-100px] h-[700px] w-[700px] rounded-full bg-[radial-gradient(circle,rgba(240,192,64,0.08)_0%,rgba(240,192,64,0.03)_35%,transparent_70%)]" />
-        <div className="pointer-events-none absolute bottom-[-150px] left-[30%] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(74,158,255,0.05)_0%,transparent_60%)]" />
+    <>
+      {/* Hero is full-bleed: negative margins counteract shell-container padding */}
+      <div className="-mx-4 sm:-mx-6 lg:-mx-10">
 
-        <div className="relative grid min-h-[520px] grid-cols-1 gap-0 xl:grid-cols-[1fr_1fr]">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="flex flex-col justify-center border-b border-border px-10 py-16 pr-12 pl-10 xl:border-b-0 xl:border-r xl:px-0 xl:py-16 xl:pr-12 xl:pl-10"
-          >
-            <div className="mb-6 flex items-center gap-[10px]">
-              <span className="h-[2px] w-6 bg-accent" />
-              <span className="text-[11px] font-semibold uppercase tracking-[2px] text-accent">
-                MLB Career Intelligence
-              </span>
-            </div>
+        {/* HERO */}
+        <section className="relative min-h-[520px] overflow-hidden border-b border-border">
+          <div className="pointer-events-none absolute -right-20 top-[-100px] h-[700px] w-[700px] rounded-full bg-[radial-gradient(circle,rgba(240,192,64,0.08)_0%,rgba(240,192,64,0.03)_35%,transparent_70%)]" />
+          <div className="pointer-events-none absolute bottom-[-150px] left-[30%] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(74,158,255,0.05)_0%,transparent_60%)]" />
 
-            <h1 className="mb-7 font-display text-[86px] leading-[0.92] tracking-[2px] text-text max-xl:text-[68px] max-sm:text-[56px]">
-              <span className="block">EVERY</span>
-              <span className="block text-accent">CAREER.</span>
-              <span className="block text-transparent [-webkit-text-stroke:1px_rgb(var(--color-text-subtle))]">
-                CHARTED.
-              </span>
-            </h1>
-
-            <p className="mb-8 max-w-[400px] text-[15px] leading-[1.75] text-text-muted">
-              Deep career arc analysis for every MLB player: peak years, projection curves, and the comparable
-              legends who came before them. Built for fans who want more than a box score.
-            </p>
-
-            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              <Link
-                to="/players/660271"
-                className="inline-flex items-center justify-center rounded-[8px] bg-accent px-7 py-3 text-[14px] font-semibold tracking-[0.2px] text-[#0a0d12] transition hover:bg-accent-strong"
-              >
-                Explore Players
-              </Link>
-              <Link
-                to="/leaderboards"
-                className="inline-flex items-center justify-center rounded-[8px] border border-border-strong bg-transparent px-6 py-3 text-[14px] font-medium text-text-muted transition hover:border-text-muted hover:text-text"
-              >
-                Open Leaderboards
-              </Link>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: 'easeOut', delay: 0.05 }}
-            className="relative bg-elevated"
-          >
-            <div className="flex h-full flex-col p-8">
-              <div className="mb-3 text-[10px] font-semibold uppercase tracking-[2px] text-text-subtle">
-                Featured Arc · Today
-              </div>
-              <div className="mb-1 font-display text-[44px] leading-none tracking-[2px] text-accent">
-                MOOKIE BETTS
-              </div>
-              <div className="mb-5 text-[12px] text-text-muted">
-                RF · Los Angeles Dodgers · 2014-Present
+          <div className="relative grid min-h-[520px] grid-cols-1 gap-0 xl:grid-cols-[1fr_1fr]">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="flex flex-col justify-center border-b border-border px-10 py-16 xl:border-b-0 xl:border-r xl:py-16 xl:pr-12 xl:pl-10"
+            >
+              <div className="mb-6 flex items-center gap-[10px]">
+                <span className="h-[2px] w-6 bg-accent" />
+                <span className="text-[11px] font-semibold uppercase tracking-[2px] text-accent">
+                  MLB Career Intelligence
+                </span>
               </div>
 
-              <div className="flex-1">
-                <div className="relative h-[260px] min-h-[200px] sm:h-[320px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={heroArcData} margin={{ top: 8, right: 8, bottom: 8, left: -24 }}>
-                      <defs>
-                        <linearGradient id="heroProjectionBand" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="rgb(var(--color-projection))" stopOpacity={0.24} />
-                          <stop offset="100%" stopColor="rgb(var(--color-projection))" stopOpacity={0.03} />
-                        </linearGradient>
-                        <linearGradient id="heroHistoricalLine" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="rgb(var(--color-accent))" stopOpacity={0.82} />
-                          <stop offset="100%" stopColor="rgb(var(--color-accent-strong))" stopOpacity={1} />
-                        </linearGradient>
-                      </defs>
+              <h1 className="mb-7 font-display text-[86px] leading-[0.92] tracking-[2px] text-text max-xl:text-[68px] max-sm:text-[56px]">
+                <span className="block">EVERY</span>
+                <span className="block text-accent">CAREER.</span>
+                <span className="block text-transparent [-webkit-text-stroke:1px_rgb(var(--color-text-subtle))]">
+                  CHARTED.
+                </span>
+              </h1>
 
-                      <CartesianGrid stroke="rgb(var(--color-border))" strokeDasharray="3 6" vertical={false} />
-                      <ReferenceArea
-                        x1="2018"
-                        x2="2020"
-                        fill="rgb(var(--color-accent))"
-                        fillOpacity={0.08}
-                        stroke="rgb(var(--color-accent))"
-                        strokeOpacity={0.18}
-                      />
-                      <XAxis
-                        dataKey="year"
-                        tickLine={false}
-                        axisLine={false}
-                        minTickGap={20}
-                        tick={{ fill: 'rgb(var(--color-text-subtle))', fontSize: 11, fontFamily: 'var(--font-mono)' }}
-                      />
-                      <YAxis
-                        domain={[40, 100]}
-                        tickCount={7}
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: 'rgb(var(--color-text-subtle))', fontSize: 11, fontFamily: 'var(--font-mono)' }}
-                      />
-                      <Tooltip
-                        content={<HeroTooltip />}
-                        cursor={{ stroke: 'rgb(var(--color-border-strong))', strokeDasharray: '4 4' }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="upper"
-                        stroke="none"
-                        fill="url(#heroProjectionBand)"
-                        activeDot={false}
-                        isAnimationActive={false}
-                        legendType="none"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="lower"
-                        stroke="none"
-                        fill="rgb(var(--color-bg-elevated))"
-                        fillOpacity={1}
-                        activeDot={false}
-                        isAnimationActive={false}
-                        legendType="none"
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="actual"
-                        stroke="url(#heroHistoricalLine)"
-                        strokeWidth={3}
-                        dot={false}
-                        activeDot={{ r: 4, fill: 'rgb(var(--color-accent))', strokeWidth: 0 }}
-                        animationDuration={900}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="projected"
-                        stroke="rgb(var(--color-projection))"
-                        strokeWidth={3}
-                        strokeDasharray="7 7"
-                        dot={false}
-                        activeDot={{ r: 4, fill: 'rgb(var(--color-projection))', strokeWidth: 0 }}
-                        animationDuration={900}
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
+              <p className="mb-8 max-w-[400px] text-[15px] leading-[1.75] text-text-muted">
+                Deep career arc analysis for every MLB player: peak years, projection curves, and the comparable
+                legends who came before them. Built for fans who want more than a box score.
+              </p>
+
+              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                <Link
+                  to="/players/660271"
+                  className="inline-flex items-center justify-center rounded-[8px] bg-accent px-7 py-3 text-[14px] font-semibold tracking-[0.2px] text-[#0a0d12] transition hover:bg-accent-strong"
+                >
+                  Explore Players
+                </Link>
+                <Link
+                  to="/leaderboards"
+                  className="inline-flex items-center justify-center rounded-[8px] border border-border-strong bg-transparent px-6 py-3 text-[14px] font-medium text-text-muted transition hover:border-text-muted hover:text-text"
+                >
+                  Open Leaderboards
+                </Link>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: 'easeOut', delay: 0.05 }}
+              className="relative bg-elevated"
+            >
+              <div className="flex h-full flex-col p-8">
+                <div className="mb-3 text-[10px] font-semibold uppercase tracking-[2px] text-text-subtle">
+                  Featured Arc · Today
+                </div>
+                <div className="mb-1 font-display text-[44px] leading-none tracking-[2px] text-accent">
+                  MOOKIE BETTS
+                </div>
+                <div className="mb-5 text-[12px] text-text-muted">
+                  RF · Los Angeles Dodgers · 2014-Present
+                </div>
+
+                <div className="flex-1">
+                  <div className="relative h-[260px] min-h-[200px] sm:h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={heroArcData} margin={{ top: 8, right: 8, bottom: 8, left: -24 }}>
+                        <defs>
+                          <linearGradient id="heroProjectionBand" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="rgb(var(--color-projection))" stopOpacity={0.24} />
+                            <stop offset="100%" stopColor="rgb(var(--color-projection))" stopOpacity={0.03} />
+                          </linearGradient>
+                          <linearGradient id="heroHistoricalLine" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="rgb(var(--color-accent))" stopOpacity={0.82} />
+                            <stop offset="100%" stopColor="rgb(var(--color-accent-strong))" stopOpacity={1} />
+                          </linearGradient>
+                        </defs>
+
+                        <CartesianGrid stroke="rgb(var(--color-border))" strokeDasharray="3 6" vertical={false} />
+                        <ReferenceArea
+                          x1="2018"
+                          x2="2020"
+                          fill="rgb(var(--color-accent))"
+                          fillOpacity={0.08}
+                          stroke="rgb(var(--color-accent))"
+                          strokeOpacity={0.18}
+                        />
+                        <XAxis
+                          dataKey="year"
+                          tickLine={false}
+                          axisLine={false}
+                          minTickGap={20}
+                          tick={{ fill: 'rgb(var(--color-text-subtle))', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+                        />
+                        <YAxis
+                          domain={[40, 100]}
+                          tickCount={7}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: 'rgb(var(--color-text-subtle))', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+                        />
+                        <Tooltip
+                          content={<HeroTooltip />}
+                          cursor={{ stroke: 'rgb(var(--color-border-strong))', strokeDasharray: '4 4' }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="upper"
+                          stroke="none"
+                          fill="url(#heroProjectionBand)"
+                          activeDot={false}
+                          isAnimationActive={false}
+                          legendType="none"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="lower"
+                          stroke="none"
+                          fill="rgb(var(--color-bg-elevated))"
+                          fillOpacity={1}
+                          activeDot={false}
+                          isAnimationActive={false}
+                          legendType="none"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="actual"
+                          stroke="url(#heroHistoricalLine)"
+                          strokeWidth={3}
+                          dot={false}
+                          activeDot={{ r: 4, fill: 'rgb(var(--color-accent))', strokeWidth: 0 }}
+                          animationDuration={900}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="projected"
+                          stroke="rgb(var(--color-projection))"
+                          strokeWidth={3}
+                          strokeDasharray="7 7"
+                          dot={false}
+                          activeDot={{ r: 4, fill: 'rgb(var(--color-projection))', strokeWidth: 0 }}
+                          animationDuration={900}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid overflow-hidden rounded-[8px] border border-border bg-border sm:grid-cols-3">
+                  {featureStats.map((stat) => (
+                    <div key={stat.label} className="border-r border-border bg-panel px-4 py-3 last:border-r-0">
+                      <div className={`font-display text-3xl tracking-[0.08em] ${statToneClassName[stat.tone]}`}>
+                        {stat.value}
+                      </div>
+                      <div className="mt-[2px] text-[10px] tracking-[0.3px] text-text-subtle">{stat.label}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
+            </motion.div>
+          </div>
+        </section>
 
-              <div className="mt-5 grid overflow-hidden rounded-[8px] border border-border bg-border sm:grid-cols-3">
-                {featureStats.map((stat) => (
-                  <div key={stat.label} className="border-r border-border bg-panel px-4 py-3 last:border-r-0">
-                    <div className={`font-display text-3xl tracking-[0.08em] ${statToneClassName[stat.tone]}`}>
-                      {stat.value}
-                    </div>
-                    <div className="mt-[2px] text-[10px] tracking-[0.3px] text-text-subtle">{stat.label}</div>
-                  </div>
-                ))}
+      {/* TRENDING PLAYERS */}
+      <section className="border-b border-border px-4 py-12 sm:px-6 lg:px-10">
+        <div className="mb-7 flex items-end justify-between">
+          <div>
+            <div className="mb-[6px] text-[10px] font-semibold uppercase tracking-[2px] text-accent">
+              Live Data · Past 14 Days
+            </div>
+            <div className="font-display text-[32px] leading-none tracking-[1px]">Trending Players</div>
+          </div>
+          <a href="#" className="border-b border-link/30 pb-[2px] text-[13px] text-link">
+            View all players →
+          </a>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-6 flex border-b border-border">
+          <button
+            type="button"
+            onClick={() => setTrendTab('hot')}
+            className={`-mb-px border-b-2 px-[22px] py-[10px] text-[13px] font-medium transition-colors ${
+              trendTab === 'hot'
+                ? 'border-accent text-accent'
+                : 'border-transparent text-text-subtle hover:text-text-muted'
+            }`}
+          >
+            🔥 Hottest Arc Movement
+          </button>
+          <button
+            type="button"
+            onClick={() => setTrendTab('view')}
+            className={`-mb-px border-b-2 px-[22px] py-[10px] text-[13px] font-medium transition-colors ${
+              trendTab === 'view'
+                ? 'border-accent text-accent'
+                : 'border-transparent text-text-subtle hover:text-text-muted'
+            }`}
+          >
+            👁 Most Viewed
+          </button>
+        </div>
+
+        {/* Player cards */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {trendData.map((player) => (
+            <div
+              key={player.name}
+              className="relative cursor-pointer overflow-hidden rounded-xl border border-border bg-elevated p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent"
+            >
+              <div className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[1px] text-text-subtle">
+                #{player.rank} · 14 day {player.isViews ? 'views' : 'arc move'}
+              </div>
+              <div className="mb-[2px] text-[15px] font-semibold text-text">{player.name}</div>
+              <div className="mb-4 text-[11px] text-text-subtle">{player.team}</div>
+              <div className="mb-3">
+                <SparkLine bars={player.bars} />
+              </div>
+              <div className="inline-flex items-center gap-[5px] rounded-[6px] bg-success/[0.12] px-[10px] py-1 font-mono text-[13px] font-medium text-success">
+                {player.delta}
               </div>
             </div>
-          </motion.div>
+          ))}
         </div>
       </section>
 
-      <div className="relative overflow-hidden bg-accent py-2">
-        <motion.div
-          initial={{ x: '0%' }}
-          animate={{ x: '-50%' }}
-          transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-          className="flex w-max gap-0 whitespace-nowrap"
-        >
-          {tickerItems.map((item, index) => (
-            <div
-              key={`${item.label}-${item.value}-${index}`}
-              className="inline-flex items-center gap-[10px] border-r border-black/15 px-8 text-[12px] font-semibold tracking-[0.3px] text-[#0a0d12]"
-            >
-              <span>{item.label}</span>
-              <span className="stat-value text-[12px]">{item.value}</span>
-              <span className="text-[10px] font-bold opacity-70">{item.delta}</span>
+      {/* STAT LEADERS + FEED */}
+      <section className="border-b border-border px-4 py-12 sm:px-6 lg:px-10">
+        <div className="grid gap-12" style={{ gridTemplateColumns: '1.1fr 1fr' }}>
+
+          {/* STAT LEADERS */}
+          <div>
+            <div className="mb-7 flex items-end justify-between">
+              <div>
+                <div className="mb-[6px] text-[10px] font-semibold uppercase tracking-[2px] text-accent">
+                  2024 Season
+                </div>
+                <div className="font-display text-[32px] leading-none tracking-[1px]">Stat Leaders</div>
+              </div>
+              <a href="#" className="border-b border-link/30 pb-[2px] text-[13px] text-link">
+                Full leaderboards →
+              </a>
             </div>
-          ))}
-        </motion.div>
+
+            {/* Category pills */}
+            <div className="mb-5 flex flex-wrap gap-2">
+              {leaderCategories.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setLeaderCat(key)}
+                  className={`rounded-full border px-[14px] py-[5px] text-[12px] font-medium transition-all ${
+                    leaderCat === key
+                      ? 'border-accent bg-accent text-[#0a0d12]'
+                      : 'border-border text-text-subtle hover:border-border-strong hover:text-text-muted'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Leaderboard rows */}
+            <div className="flex flex-col gap-[6px]">
+              {leaders.map((entry, i) => (
+                <div
+                  key={entry.n}
+                  className="flex cursor-pointer items-center gap-3 rounded-[8px] border border-border bg-elevated px-[14px] py-[10px] transition-colors hover:border-border-strong"
+                >
+                  <span className="w-[18px] shrink-0 text-right font-mono text-[11px] text-text-subtle">
+                    {i + 1}
+                  </span>
+                  <div className="flex-1">
+                    <div className="text-[13px] font-medium">{entry.n}</div>
+                    <div className="text-[10px] text-text-subtle">{entry.t}</div>
+                  </div>
+                  <div className="h-1 w-24 shrink-0 overflow-hidden rounded-sm bg-panel">
+                    <div
+                      className="h-full rounded-sm bg-accent transition-all duration-300"
+                      style={{ width: `${leaderBarPct(i, entry.v)}%` }}
+                    />
+                  </div>
+                  <span className="w-[52px] shrink-0 text-right font-mono text-[14px] font-medium text-accent">
+                    {entry.v}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* FEED */}
+          <div>
+            <div className="mb-7 flex items-end justify-between">
+              <div>
+                <div className="mb-[6px] text-[10px] font-semibold uppercase tracking-[2px] text-accent">
+                  Insights &amp; News
+                </div>
+                <div className="font-display text-[32px] leading-none tracking-[1px]">Latest</div>
+              </div>
+              <a href="#" className="border-b border-link/30 pb-[2px] text-[13px] text-link">
+                More →
+              </a>
+            </div>
+
+            {/* Featured insight */}
+            <div className="mb-[10px] cursor-pointer rounded-xl border border-border bg-elevated p-6 transition-colors hover:border-link">
+              <div className="mb-3 inline-flex items-center gap-[5px] rounded-[5px] border border-accent/20 bg-accent/[0.12] px-[9px] py-[3px] text-[10px] font-semibold uppercase tracking-[1px] text-accent">
+                CapCurve Insight
+              </div>
+              <div className="mb-2 text-[16px] font-semibold leading-[1.5]">
+                Juan Soto&apos;s arc score climbed 11.2 points in 14 days — steepest monthly rise since his 2022 breakout
+              </div>
+              <div className="text-[11px] text-text-subtle">2 hours ago · CapCurve Analysis</div>
+            </div>
+
+            {/* Feed items */}
+            <div className="flex flex-col gap-[6px]">
+              {feedItems.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex cursor-pointer items-start gap-[10px] rounded-[8px] border border-border bg-elevated px-3 py-[10px] transition-colors hover:border-border-strong"
+                >
+                  <span
+                    className={`mt-[2px] shrink-0 rounded-[4px] px-[7px] py-[3px] text-[9px] font-bold uppercase tracking-[1px] ${
+                      item.type === 'insight'
+                        ? 'border border-accent/20 bg-accent/[0.12] text-accent'
+                        : 'border border-link/20 bg-link/[0.10] text-link'
+                    }`}
+                  >
+                    {item.type}
+                  </span>
+                  <div className="flex-1">
+                    <div className="text-[13px] font-medium leading-[1.4] text-text">{item.text}</div>
+                    <div className="mt-[3px] text-[10px] text-text-subtle">{item.meta}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </section>
       </div>
-    </div>
+    </>
   )
 }
