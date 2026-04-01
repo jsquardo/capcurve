@@ -1,29 +1,6 @@
 import { useState } from 'react'
 import HeroSection from '../components/home/HeroSection'
-
-// --- Trending Players ---
-type TrendCard = {
-  rank: number
-  name: string
-  team: string
-  delta: string
-  bars: number[]
-  isViews?: boolean
-}
-
-const hotTrendData: TrendCard[] = [
-  { rank: 1, name: 'Elly De La Cruz', team: 'CIN · SS', delta: '+9.1 arc pts', bars: [30, 38, 42, 55, 60, 62, 58, 70, 82, 91] },
-  { rank: 2, name: 'Paul Skenes', team: 'PIT · SP', delta: '+7.4 arc pts', bars: [40, 48, 52, 60, 65, 70, 68, 75, 85, 88] },
-  { rank: 3, name: 'Jackson Chourio', team: 'MIL · OF', delta: '+6.8 arc pts', bars: [20, 25, 30, 38, 44, 50, 54, 60, 70, 78] },
-  { rank: 4, name: 'Bobby Witt Jr.', team: 'KC · SS', delta: '+5.9 arc pts', bars: [25, 32, 40, 50, 58, 62, 66, 70, 76, 84] },
-]
-
-const viewTrendData: TrendCard[] = [
-  { rank: 1, name: 'Shohei Ohtani', team: 'LAD · DH/SP', delta: '84.2k views', bars: [60, 65, 70, 72, 75, 80, 82, 85, 88, 90], isViews: true },
-  { rank: 2, name: 'Aaron Judge', team: 'NYY · RF', delta: '71.5k views', bars: [55, 62, 68, 74, 80, 84, 86, 88, 85, 82], isViews: true },
-  { rank: 3, name: 'Mike Trout', team: 'LAA · CF', delta: '58.3k views', bars: [48, 76, 80, 82, 88, 87, 91, 91, 90, 72], isViews: true },
-  { rank: 4, name: 'Fernando Tatis Jr.', team: 'SD · RF', delta: '44.1k views', bars: [35, 55, 72, 78, 65, 60, 68, 74, 78, 80], isViews: true },
-]
+import TrendingSection from '../components/home/TrendingSection'
 
 // --- Stat Leaders ---
 type LeaderEntry = { n: string; t: string; v: number | string }
@@ -85,38 +62,9 @@ const feedItems: FeedItem[] = [
   { type: 'news', text: 'AL MVP race heating up: Judge and Witt lead advanced metrics in second half', meta: 'Baseball America · 14h' },
 ]
 
-// --- SparkLine component ---
-function SparkLine({ bars }: { bars: number[] }) {
-  const max = Math.max(...bars)
-  const n = bars.length
-  const w = 100
-  const h = 38
-  const pts = bars.map((v, i) => `${(i / (n - 1)) * w},${h - (v / max) * h}`)
-  const area = pts.join(' ')
-  const fillPts = `0,${h} ${area} ${w},${h}`
-  const lastY = h - (bars[n - 1] / max) * h
-
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible">
-      <polygon points={fillPts} fill="rgba(240,192,64,0.08)" />
-      <polyline
-        points={area}
-        fill="none"
-        stroke="rgb(var(--color-accent))"
-        strokeWidth={2}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      <circle cx={w} cy={lastY} r={3} fill="rgb(var(--color-accent))" />
-    </svg>
-  )
-}
-
 export default function HomePage() {
-  const [trendTab, setTrendTab] = useState<'hot' | 'view'>('hot')
   const [leaderCat, setLeaderCat] = useState<LeaderCategory>('hr')
 
-  const trendData = trendTab === 'hot' ? hotTrendData : viewTrendData
   const leaders = leadersData[leaderCat]
   const isNumericLeader = typeof leaders[0].v === 'number'
 
@@ -132,69 +80,7 @@ export default function HomePage() {
     <>
       <HeroSection />
 
-      {/* TRENDING PLAYERS */}
-      <section className="border-b border-border px-4 py-12 sm:px-6 lg:px-10">
-        <div className="mb-7 flex items-end justify-between">
-          <div>
-            <div className="mb-[6px] text-[10px] font-semibold uppercase tracking-[2px] text-accent">
-              Live Data · Past 14 Days
-            </div>
-            <div className="font-display text-[32px] leading-none tracking-[1px]">Trending Players</div>
-          </div>
-          {/* TODO: wire to /players when PlayerListPage exists */}
-          <span className="border-b border-link/30 pb-[2px] text-[13px] text-link">
-            View all players →
-          </span>
-        </div>
-
-        {/* Tabs */}
-        <div className="mb-6 flex border-b border-border">
-          <button
-            type="button"
-            onClick={() => setTrendTab('hot')}
-            className={`-mb-px border-b-2 px-[22px] py-[10px] text-[13px] font-medium transition-colors ${
-              trendTab === 'hot'
-                ? 'border-accent text-accent'
-                : 'border-transparent text-text-subtle hover:text-text-muted'
-            }`}
-          >
-            🔥 Hottest Arc Movement
-          </button>
-          <button
-            type="button"
-            onClick={() => setTrendTab('view')}
-            className={`-mb-px border-b-2 px-[22px] py-[10px] text-[13px] font-medium transition-colors ${
-              trendTab === 'view'
-                ? 'border-accent text-accent'
-                : 'border-transparent text-text-subtle hover:text-text-muted'
-            }`}
-          >
-            👁 Most Viewed
-          </button>
-        </div>
-
-        {/* Player cards */}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {trendData.map((player) => (
-            <div
-              key={player.name}
-              className="relative cursor-pointer overflow-hidden rounded-xl border border-border bg-elevated p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent"
-            >
-              <div className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[1px] text-text-subtle">
-                #{player.rank} · 14 day {player.isViews ? 'views' : 'arc move'}
-              </div>
-              <div className="mb-[2px] text-[15px] font-semibold text-text">{player.name}</div>
-              <div className="mb-4 text-[11px] text-text-subtle">{player.team}</div>
-              <div className="mb-3">
-                <SparkLine bars={player.bars} />
-              </div>
-              <div className="inline-flex items-center gap-[5px] rounded-[6px] bg-success/[0.12] px-[10px] py-1 font-mono text-[13px] font-medium text-success">
-                {player.delta}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <TrendingSection />
 
       {/* STAT LEADERS + FEED */}
       <section className="border-b border-border px-4 py-12 sm:px-6 lg:px-10">
