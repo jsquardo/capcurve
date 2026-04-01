@@ -1,56 +1,6 @@
-import { useState } from 'react'
 import HeroSection from '../components/home/HeroSection'
 import TrendingSection from '../components/home/TrendingSection'
-
-// --- Stat Leaders ---
-type LeaderEntry = { n: string; t: string; v: number | string }
-type LeaderCategory = 'hr' | 'avg' | 'era' | 'k9' | 'ops'
-
-const leadersData: Record<LeaderCategory, LeaderEntry[]> = {
-  hr: [
-    { n: 'Aaron Judge', t: 'NYY', v: 58 },
-    { n: 'Shohei Ohtani', t: 'LAD', v: 54 },
-    { n: 'Kyle Schwarber', t: 'PHI', v: 47 },
-    { n: 'Pete Alonso', t: 'NYM', v: 46 },
-    { n: 'Yordan Alvarez', t: 'HOU', v: 45 },
-  ],
-  avg: [
-    { n: 'Luis Arraez', t: 'MIA', v: '.354' },
-    { n: 'Freddie Freeman', t: 'LAD', v: '.331' },
-    { n: 'Paul Goldschmidt', t: 'STL', v: '.317' },
-    { n: 'Rafael Devers', t: 'BOS', v: '.312' },
-    { n: 'Trea Turner', t: 'PHI', v: '.308' },
-  ],
-  era: [
-    { n: 'Spencer Strider', t: 'ATL', v: '2.11' },
-    { n: 'Zack Wheeler', t: 'PHI', v: '2.34' },
-    { n: 'Gerrit Cole', t: 'NYY', v: '2.56' },
-    { n: 'Sandy Alcantara', t: 'MIA', v: '2.70' },
-    { n: 'Kevin Gausman', t: 'SF', v: '2.81' },
-  ],
-  k9: [
-    { n: 'Spencer Strider', t: 'ATL', v: '13.7' },
-    { n: 'Corbin Burnes', t: 'BAL', v: '11.9' },
-    { n: 'Dylan Cease', t: 'SD', v: '11.4' },
-    { n: 'Julio Urías', t: 'LAD', v: '10.8' },
-    { n: 'Shane Bieber', t: 'CLE', v: '10.3' },
-  ],
-  ops: [
-    { n: 'Shohei Ohtani', t: 'LAD', v: '1.038' },
-    { n: 'Aaron Judge', t: 'NYY', v: '.999' },
-    { n: 'Yordan Alvarez', t: 'HOU', v: '.987' },
-    { n: 'Ronald Acuña Jr.', t: 'ATL', v: '.961' },
-    { n: 'Luis Robert Jr.', t: 'CWS', v: '.943' },
-  ],
-}
-
-const leaderCategories: { key: LeaderCategory; label: string }[] = [
-  { key: 'hr', label: 'HR' },
-  { key: 'avg', label: 'AVG' },
-  { key: 'era', label: 'ERA' },
-  { key: 'k9', label: 'K/9' },
-  { key: 'ops', label: 'OPS' },
-]
+import StatLeadersSection from '../components/home/StatLeadersSection'
 
 // --- Feed ---
 type FeedItem = { type: 'insight' | 'news'; text: string; meta: string }
@@ -63,19 +13,6 @@ const feedItems: FeedItem[] = [
 ]
 
 export default function HomePage() {
-  const [leaderCat, setLeaderCat] = useState<LeaderCategory>('hr')
-
-  const leaders = leadersData[leaderCat]
-  const isNumericLeader = typeof leaders[0].v === 'number'
-
-  function leaderBarPct(i: number, v: number | string): number {
-    if (isNumericLeader) {
-      return Math.round((Number(v) / Number(leaders[0].v)) * 100)
-    }
-    // Rank-based width for string stat values (AVG, ERA, etc.)
-    return Math.round(((leaders.length - i) / leaders.length) * 85) + 15
-  }
-
   return (
     <>
       <HeroSection />
@@ -84,67 +21,9 @@ export default function HomePage() {
 
       {/* STAT LEADERS + FEED */}
       <section className="border-b border-border px-4 py-12 sm:px-6 lg:px-10">
-        <div className="grid gap-12" style={{ gridTemplateColumns: '1.1fr 1fr' }}>
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.1fr_1fr]">
 
-          {/* STAT LEADERS */}
-          <div>
-            <div className="mb-7 flex items-end justify-between">
-              <div>
-                <div className="mb-[6px] text-[10px] font-semibold uppercase tracking-[2px] text-accent">
-                  2024 Season
-                </div>
-                <div className="font-display text-[32px] leading-none tracking-[1px]">Stat Leaders</div>
-              </div>
-              <a href="/leaderboards" className="border-b border-link/30 pb-[2px] text-[13px] text-link">
-                Full leaderboards →
-              </a>
-            </div>
-
-            {/* Category pills */}
-            <div className="mb-5 flex flex-wrap gap-2">
-              {leaderCategories.map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setLeaderCat(key)}
-                  className={`rounded-full border px-[14px] py-[5px] text-[12px] font-medium transition-all ${
-                    leaderCat === key
-                      ? 'border-accent bg-accent text-[#0a0d12]'
-                      : 'border-border text-text-subtle hover:border-border-strong hover:text-text-muted'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Leaderboard rows */}
-            <div className="flex flex-col gap-[6px]">
-              {leaders.map((entry, i) => (
-                <div
-                  key={entry.n}
-                  className="flex cursor-pointer items-center gap-3 rounded-[8px] border border-border bg-elevated px-[14px] py-[10px] transition-colors hover:border-border-strong"
-                >
-                  <span className="w-[18px] shrink-0 text-right font-mono text-[11px] text-text-subtle">
-                    {i + 1}
-                  </span>
-                  <div className="flex-1">
-                    <div className="text-[13px] font-medium">{entry.n}</div>
-                    <div className="text-[10px] text-text-subtle">{entry.t}</div>
-                  </div>
-                  <div className="h-1 w-24 shrink-0 overflow-hidden rounded-sm bg-panel">
-                    <div
-                      className="h-full rounded-sm bg-accent transition-all duration-300"
-                      style={{ width: `${leaderBarPct(i, entry.v)}%` }}
-                    />
-                  </div>
-                  <span className="w-[52px] shrink-0 text-right font-mono text-[14px] font-medium text-accent">
-                    {entry.v}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <StatLeadersSection />
 
           {/* FEED */}
           <div>
