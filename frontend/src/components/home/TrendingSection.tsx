@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import TrendingCard from './TrendingCard'
 
+type TrendItem = {
+  rank: number
+  name: string
+  team: string
+  delta: string
+  bars: number[]
+  isViews?: boolean
+}
+
 // Mock data — replace with API responses when arc-delta and page-view endpoints are ready
 // TODO: wire to /api/v1/players/trending?signal=arc_delta&days=14 (Phase 3 backend feature)
-const hotTrendData = [
+const hotTrendData: TrendItem[] = [
   { rank: 1, name: 'Elly De La Cruz', team: 'CIN · SS', delta: '+9.1 arc pts', bars: [30, 38, 42, 55, 60, 62, 58, 70, 82, 91] },
   { rank: 2, name: 'Paul Skenes', team: 'PIT · SP', delta: '+7.4 arc pts', bars: [40, 48, 52, 60, 65, 70, 68, 75, 85, 88] },
   { rank: 3, name: 'Jackson Chourio', team: 'MIL · OF', delta: '+6.8 arc pts', bars: [20, 25, 30, 38, 44, 50, 54, 60, 70, 78] },
@@ -11,7 +20,7 @@ const hotTrendData = [
 ]
 
 // TODO: wire to /api/v1/players/trending?signal=page_views&days=14 (Phase 3 backend feature)
-const viewTrendData = [
+const viewTrendData: TrendItem[] = [
   { rank: 1, name: 'Shohei Ohtani', team: 'LAD · DH/SP', delta: '84.2k views', bars: [60, 65, 70, 72, 75, 80, 82, 85, 88, 90], isViews: true },
   { rank: 2, name: 'Aaron Judge', team: 'NYY · RF', delta: '71.5k views', bars: [55, 62, 68, 74, 80, 84, 86, 88, 85, 82], isViews: true },
   { rank: 3, name: 'Mike Trout', team: 'LAA · CF', delta: '58.3k views', bars: [48, 76, 80, 82, 88, 87, 91, 91, 90, 72], isViews: true },

@@ -15,19 +15,29 @@ const tickerItems = [
 ]
 
 // The list is duplicated so the animation loops seamlessly.
-// We measure the actual pixel width of the first copy after render and animate
-// to exactly -oneHalfWidth so that the loop point is pixel-perfect regardless
-// of font rendering or item count changes.
+// We measure the actual pixel width of the first copy after fonts load and
+// re-measure on resize so the loop stays pixel-perfect if layout shifts.
 export default function TickerBar() {
   const listRef = useRef<HTMLDivElement>(null)
   const [oneHalfWidth, setOneHalfWidth] = useState(0)
 
   useEffect(() => {
-    if (listRef.current) {
-      // scrollWidth covers both copies; half is the width of one copy.
-      setOneHalfWidth(listRef.current.scrollWidth / 2)
+    function measure() {
+      if (listRef.current) {
+        setOneHalfWidth(listRef.current.scrollWidth / 2)
+      }
     }
-  }, [tickerItems])
+
+    // Measure after fonts are fully loaded so DM Sans doesn't shift the loop point.
+    document.fonts.ready.then(measure)
+
+    // Re-measure if the container resizes (e.g. orientation change, zoom).
+    const el = listRef.current
+    if (!el) return
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div className="overflow-hidden bg-accent py-2">

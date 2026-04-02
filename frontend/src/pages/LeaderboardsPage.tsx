@@ -78,6 +78,8 @@ const MOCK_LEADERS: Record<LeaderboardCategory, LeaderboardEntry[]> = {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+const MOCK_PAGE_SIZE = 4
+
 export default function LeaderboardsPage() {
   const [activeCategory, setActiveCategory] = useState<LeaderboardCategory>('peak_arc')
   const [page, setPage] = useState(1)
@@ -88,7 +90,10 @@ export default function LeaderboardsPage() {
     setPage(1)
   }
 
-  const leaders = MOCK_LEADERS[activeCategory]
+  const allLeaders = MOCK_LEADERS[activeCategory]
+  // Slice to the current page so the pagination controls actually work against mock data.
+  // Replace allLeaders + this slice with a TanStack Query call when wiring to the live API.
+  const leaders = allLeaders.slice((page - 1) * MOCK_PAGE_SIZE, page * MOCK_PAGE_SIZE)
 
   return (
     <div className="shell-container space-y-6 py-8">

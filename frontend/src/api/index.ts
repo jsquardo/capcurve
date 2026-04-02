@@ -4,7 +4,6 @@ import type {
   PlayerListItem,
   PlayerListResponse,
   CareerArcResponse,
-  Contract,
   AdminDashboard,
   LeaderboardCategory,
   LeaderboardsResponse,
@@ -50,23 +49,6 @@ export const getCareerArc = async (
   playerId: number,
 ): Promise<CareerArcResponse> => {
   const { data } = await api.get(`/players/${playerId}/career-arc`);
-  return data;
-};
-
-export const getPlayerContracts = async (
-  playerId: number,
-): Promise<Contract[]> => {
-  const { data } = await api.get(`/players/${playerId}/contracts`);
-  return data;
-};
-
-export const getMostOverpaid = async (): Promise<Contract[]> => {
-  const { data } = await api.get("/leaderboards/most-overpaid");
-  return data;
-};
-
-export const getBestValue = async (): Promise<Contract[]> => {
-  const { data } = await api.get("/leaderboards/best-value");
   return data;
 };
 
