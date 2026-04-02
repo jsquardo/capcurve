@@ -1,3 +1,34 @@
+## [2026-04-02] — Session Summary (5)
+
+### Fixed
+- `LeaderboardsPage`: `heroSeason` now derived from `CURRENT_SEASON = 2025`
+  constant instead of `leaders[0]?.season`; seasonal categories no longer flash
+  `ALL-TIME` during loading or error states.
+
+### Added
+- `api/index.ts`: new `getPlayers(params?: GetPlayersParams)` function replacing
+  the limited `listPlayers` stub; returns full `PlayerListResponse` including
+  `meta`; exports `GetPlayersParams` interface.
+- `components/players/PlayerListHero.tsx`: page header with pulse-skeleton badge
+  during loading, then live total player count.
+- `components/players/PlayerFilters.tsx`: controlled filter bar — text search,
+  Active/Retired/All pills, position dropdown (hardcoded MLB positions), sort dropdown.
+- `components/players/PlayerCard.tsx`: single player row rendered as a full `<Link>`
+  to `/players/:id`; initials avatar, name, position · team, active/retired badge,
+  value score + season year.
+- `components/players/PlayerListSkeleton.tsx`: pulsing placeholder rows mirroring
+  `PlayerCard` layout; configurable `rows` prop (default 10).
+- `pages/PlayersPage.tsx`: `/players` browse page composer; 300ms debounced text
+  search; all filter changes reset page to 1; loading/error/empty/success states;
+  reuses `LeaderboardPagination`.
+- `App.tsx`: `/players` route registered before `/players/:id`.
+
+### Notes
+- Player count reflects only ingested players in the DB; the backend returns all
+  players with no filter applied.
+
+---
+
 ## [2026-04-02] — Session Summary (4)
 
 ### Added

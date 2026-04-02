@@ -37,12 +37,21 @@ export const getPlayer = async (id: number): Promise<Player> => {
   return data;
 };
 
-export const listPlayers = async (params?: {
+export interface GetPlayersParams {
+  q?: string;
   active?: boolean;
   position?: string;
-}): Promise<PlayerListItem[]> => {
+  team?: string;
+  sort?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export const getPlayers = async (
+  params?: GetPlayersParams,
+): Promise<PlayerListResponse> => {
   const { data } = await api.get<PlayerListResponse>("/players", { params });
-  return data.data;
+  return data;
 };
 
 export const getCareerArc = async (

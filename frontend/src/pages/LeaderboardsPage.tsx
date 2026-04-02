@@ -9,6 +9,7 @@ import LeaderboardPagination from '@/components/leaderboards/LeaderboardPaginati
 import LeaderboardSkeleton from '@/components/leaderboards/LeaderboardSkeleton'
 
 const PAGE_SIZE = 25
+const CURRENT_SEASON = 2025
 
 export default function LeaderboardsPage() {
   const [activeCategory, setActiveCategory] = useState<LeaderboardCategory>('peak_arc')
@@ -27,9 +28,9 @@ export default function LeaderboardsPage() {
 
   const leaders = data?.data.leaders ?? []
   const totalPages = data?.data.meta.total_pages ?? 1
-  // Derive the season badge value from the first entry — null for peak_arc (all-time),
-  // the actual year for seasonal categories. Falls back to null while loading.
-  const heroSeason = activeCategory === 'peak_arc' ? null : (leaders[0]?.season ?? null)
+  // Use a stable constant for the season badge — never read from leaders[0] so the
+  // badge doesn't flip to ALL-TIME during loading/error states for seasonal categories.
+  const heroSeason = activeCategory === 'peak_arc' ? null : CURRENT_SEASON
 
   return (
     <div className="shell-container space-y-6 py-8">
