@@ -124,7 +124,7 @@
   }
 
   .nav-link {
-    @apply text-sm font-medium tracking-[0.02em] text-text-muted transition-colors hover:text-text;
+    @apply text-[13px] font-medium tracking-[0.3px] text-text-muted transition-colors hover:text-text;
   }
 
   .nav-link-active {

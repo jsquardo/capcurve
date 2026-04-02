@@ -48,49 +48,62 @@ export default function Navbar() {
 
   return (
     <header className="shell-panel sticky top-0 z-50">
-      <nav className="shell-container flex min-h-[72px] items-center gap-4 py-4">
-        <div className="flex min-w-0 flex-1 items-center gap-4 lg:gap-8">
-          <NavLink
-            to="/"
-            onClick={closeMobileMenu}
-            className="shrink-0 font-display text-[2rem] leading-none tracking-[0.14em] text-accent"
-          >
-            CAP<span className="text-text">CURVE</span>
-          </NavLink>
+      <nav className="shell-container flex h-[60px] items-center gap-4">
+        {/* Logo */}
+        <NavLink
+          to="/"
+          onClick={closeMobileMenu}
+          className="shrink-0 font-display text-[2rem] leading-none tracking-[3px] text-accent"
+        >
+          CAP<span className="text-text">CURVE</span>
+        </NavLink>
 
-          <div className="hidden items-center gap-6 lg:flex">
-            {NAV_ITEMS.map((item) => (
+        {/* Desktop nav links */}
+        <ul className="hidden items-center gap-10 list-none lg:flex ml-8">
+          {NAV_ITEMS.map((item) => (
+            <li key={item.label}>
               <NavLink
-                key={item.label}
                 to={item.to}
                 className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
               >
                 {item.label}
               </NavLink>
-            ))}
-            {/* TODO: wire to /players when PlayerListPage exists */}
-            <span className="text-sm font-medium tracking-[0.02em] text-text-muted/75">Players</span>
-            {/* TODO: wire to /playground when PlaygroundPage is built */}
-            <span className="text-sm font-medium tracking-[0.02em] text-text-muted/75">Stat Playground</span>
-          </div>
-        </div>
+            </li>
+          ))}
+          {/* TODO: wire to /players when PlayerListPage exists */}
+          <li>
+            <span className="nav-link opacity-60 cursor-default">Players ▾</span>
+          </li>
+          {/* TODO: wire to /playground when PlaygroundPage is built */}
+          <li>
+            <span className="nav-link opacity-60 cursor-default">Playground</span>
+          </li>
+        </ul>
 
-        <div className="hidden min-w-0 flex-1 items-center justify-end gap-3 md:flex">
-          <div className="relative w-full max-w-xs">
-            <input
-              type="search"
-              placeholder="Search players..."
-              className="shell-input w-full pr-10"
-              aria-label="Search players"
-            />
-            <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-text-subtle">
+        {/* Desktop right: search + Explore + theme toggle */}
+        <div className="hidden items-center gap-3 lg:flex ml-auto">
+          <div className="relative">
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[13px] text-text-subtle">
               ⌕
             </span>
+            <input
+              type="search"
+              placeholder="Search any player..."
+              aria-label="Search players"
+              className="w-[240px] rounded-[8px] border border-border bg-elevated py-2 pl-9 pr-4 text-[13px] text-text outline-none placeholder:text-text-subtle transition focus:border-accent"
+            />
           </div>
+          {/* TODO: wire to /players when PlayerListPage exists */}
+          <button
+            type="button"
+            className="rounded-[7px] bg-accent px-[18px] py-[7px] text-[13px] font-medium text-[#0a0d12] transition hover:bg-accent-strong"
+          >
+            Explore
+          </button>
           <button
             type="button"
             onClick={toggleTheme}
-            className="shell-button h-11 w-11"
+            className="p-1.5 text-text-subtle transition-colors hover:text-text"
             aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
             title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
           >
@@ -98,11 +111,12 @@ export default function Navbar() {
           </button>
         </div>
 
-        <div className="ml-auto flex items-center gap-2 md:hidden">
+        {/* Mobile right: theme toggle + hamburger */}
+        <div className="ml-auto flex items-center gap-2 lg:hidden">
           <button
             type="button"
             onClick={toggleTheme}
-            className="shell-button h-10 w-10"
+            className="p-1.5 text-text-subtle hover:text-text"
             aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
@@ -121,7 +135,7 @@ export default function Navbar() {
       </nav>
 
       {mobileOpen ? (
-        <div id="mobile-nav-panel" className="border-t border-border/70 md:hidden">
+        <div id="mobile-nav-panel" className="border-t border-border/70 lg:hidden">
           <div className="shell-container space-y-4 py-4">
             <div className="space-y-3">
               {NAV_ITEMS.map((item) => (
@@ -130,21 +144,21 @@ export default function Navbar() {
                   to={item.to}
                   onClick={closeMobileMenu}
                   className={({ isActive }) =>
-                    `block text-base font-medium ${isActive ? 'text-text' : 'text-text-muted'}`
+                    `block text-[13px] font-medium ${isActive ? 'text-text' : 'text-text-muted'}`
                   }
                 >
                   {item.label}
                 </NavLink>
               ))}
               {/* TODO: wire to /players when PlayerListPage exists */}
-              <div className="text-base font-medium text-text-muted/75">Players</div>
+              <div className="text-[13px] font-medium text-text-muted opacity-60">Players ▾</div>
               {/* TODO: wire to /playground when PlaygroundPage is built */}
-              <div className="text-base font-medium text-text-muted/75">Stat Playground</div>
+              <div className="text-[13px] font-medium text-text-muted opacity-60">Playground</div>
             </div>
             <input
               type="search"
-              placeholder="Search players..."
-              className="shell-input w-full"
+              placeholder="Search any player..."
+              className="w-full rounded-[8px] border border-border bg-elevated py-2 px-4 text-[13px] text-text outline-none placeholder:text-text-subtle transition focus:border-accent"
               aria-label="Search players"
             />
           </div>

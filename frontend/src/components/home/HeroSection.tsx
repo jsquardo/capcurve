@@ -95,12 +95,13 @@ export default function HeroSection() {
       <div className="pointer-events-none absolute -right-20 top-[-100px] h-[700px] w-[700px] rounded-full bg-[radial-gradient(circle,rgba(240,192,64,0.08)_0%,rgba(240,192,64,0.03)_35%,transparent_70%)]" />
       <div className="pointer-events-none absolute bottom-[-150px] left-[30%] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(74,158,255,0.05)_0%,transparent_60%)]" />
 
+      <div className="shell-container">
       <div className="relative grid min-h-[520px] grid-cols-1 gap-0 xl:grid-cols-[1fr_1fr]">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="flex flex-col justify-center border-b border-border px-10 py-16 xl:border-b-0 xl:border-r xl:py-16 xl:pr-12 xl:pl-10"
+          className="flex flex-col justify-center border-b border-border py-16 xl:border-b-0 xl:border-r xl:py-16 xl:pr-12"
         >
           <div className="mb-6 flex items-center gap-[10px]">
             <span className="h-[2px] w-6 bg-accent" />
@@ -252,6 +253,7 @@ export default function HeroSection() {
             </div>
           </div>
         </motion.div>
+      </div>
       </div>
     </section>
   )
