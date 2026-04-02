@@ -74,7 +74,8 @@ export default function LeaderboardTable({ leaders, category }: LeaderboardTable
             position={entry.position}
             value={formatValue(entry.value, category)}
             barPct={barPct(entry, leaders, category)}
-            playerId={entry.player_id}
+            // TODO: pass playerId={entry.player_id} once the page is wired to the live API;
+            // mock player_ids are not real DB IDs and would produce broken /players/:id links.
           />
         ))}
       </div>

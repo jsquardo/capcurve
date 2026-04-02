@@ -10,7 +10,6 @@ export interface Player {
   active: boolean;
   image_url: string;
   season_stats?: SeasonStat[];
-  contracts?: Contract[];
   career_arc?: CareerArc;
 }
 
@@ -98,34 +97,6 @@ export interface SeasonStat {
   avg_launch_angle: number | null;
   sweet_spot_pct: number | null;
   value_score: number;
-}
-
-export interface Contract {
-  id: number;
-  player_id: number;
-  team_name: string;
-  total_value: number;
-  aav: number;
-  years: number;
-  start_year: number;
-  end_year: number;
-  signing_age: number;
-  contract_type: string;
-  overall_value_score: number;
-  is_active: boolean;
-  contract_seasons?: ContractSeason[];
-}
-
-export interface ContractSeason {
-  id: number;
-  contract_id: number;
-  player_id: number;
-  year: number;
-  salary: number;
-  war: number;
-  war_value: number;
-  value_score: number;
-  verdict_label: "Bargain" | "Fair" | "Overpaid" | "Albatross";
 }
 
 export interface CareerArc {

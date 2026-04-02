@@ -1,3 +1,71 @@
+## [2026-04-02] — Session Summary (3)
+
+### Changed
+- `LeaderboardTable`: stopped passing `playerId` to `LeaderRow` while the page
+  is mock-backed; player names are plain text (not links) until real API IDs flow
+  through. TODO comment marks the restore point.
+- `types/index.ts`: removed `Contract`, `ContractSeason`, and `contracts?` from
+  `Player` — frontend shared type surface is now fully contract-independent.
+
+### Added
+- `types/phase5.ts`: new file holding `Contract` and `ContractSeason` interfaces
+  with a clear Phase 5 deferred comment; isolated from active code paths.
+
+---
+
+## [2026-04-02] — Session Summary (2)
+
+### Fixed
+- Resolved TypeScript error in `TrendingSection.tsx`: added explicit `TrendItem`
+  type annotation to both mock data arrays so `player.isViews` is unambiguously
+  typed across both the hot-trend and view-trend datasets. `tsc` and the
+  production build now pass cleanly.
+- Fixed missing `@rollup/rollup-linux-arm64-musl` optional dependency by
+  re-running `npm install` inside the frontend container.
+
+### Changed
+- `LeaderboardsPage`: pagination controls now actually slice the mock data
+  (4 rows per page, 3 pages total) so the Prev/Next buttons work against the
+  mock before TanStack Query is wired.
+- `frontend/src/api/index.ts`: removed deferred contract API helpers
+  (`getPlayerContracts`, `getMostOverpaid`, `getBestValue`) and their `Contract`
+  import so the frontend API surface matches the live contract-independent backend.
+- `TickerBar`: replaced single-run `useEffect` with `document.fonts.ready` +
+  `ResizeObserver` so the marquee loop width is measured after fonts load and
+  re-measured on container resize, preventing a shifted loop point.
+
+### Notes
+- Chunk-size warning from Vite is pre-existing; no action needed yet.
+
+## [2026-04-02] — Session Summary
+
+### Added
+- Added an `AGENTS.md` Current State update recording that the homepage
+  regression cleanup is complete and that the next frontend priority is the
+  first real `/leaderboards` page shell
+
+### Changed
+- Wrapped homepage section content in `.shell-container` while keeping section
+  borders/backgrounds full-bleed
+- Fixed the Trending Players card grid to `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`
+- Replaced homepage internal route anchors with `Link` where real in-app
+  destinations exist
+- Aligned Stat Leaders mock categories with the supported
+  `GET /api/v1/leaderboards` contract (`peak_arc`, `hr`, `avg`, `era`, `k9`)
+- Updated the ticker loop to animate by measured width instead of a fixed
+  `-50%` translate
+- Refined the navbar/hero containment so the homepage top section better matches
+  the current shell constraints and prototype alignment
+
+### Fixed
+- Removed contract-dependent placeholder copy from `/leaderboards`
+- Removed dead click/hover affordances from homepage cards that do not yet have
+  real destinations
+
+### Notes
+- The ticker marquee still needs a follow-up pass to re-measure on resize and
+  delayed font load so the loop stays seamless after layout changes
+
 ## [2026-04-01] — Session Summary
 
 ### Added
