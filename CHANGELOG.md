@@ -1,5 +1,9 @@
 ## [2026-04-02] — Session Summary (3)
 
+### Added
+- `types/phase5.ts`: new file holding `Contract` and `ContractSeason` interfaces
+  with a clear Phase 5 deferred comment; isolated from active code paths.
+
 ### Changed
 - `LeaderboardTable`: stopped passing `playerId` to `LeaderRow` while the page
   is mock-backed; player names are plain text (not links) until real API IDs flow
@@ -7,9 +11,13 @@
 - `types/index.ts`: removed `Contract`, `ContractSeason`, and `contracts?` from
   `Player` — frontend shared type surface is now fully contract-independent.
 
-### Added
-- `types/phase5.ts`: new file holding `Contract` and `ContractSeason` interfaces
-  with a clear Phase 5 deferred comment; isolated from active code paths.
+### Fixed
+- Prevented the mock `/leaderboards` page from rendering broken `/players/:id`
+  links before real backend player IDs are wired through TanStack Query.
+
+### Notes
+- No tests were run because this session only changed frontend type definitions
+  and documentation-aligned mock behavior.
 
 ---
 
