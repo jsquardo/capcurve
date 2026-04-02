@@ -1,3 +1,26 @@
+## [2026-04-01] — Session Summary
+
+### Added
+- Added an `AGENTS.md` Current State note clarifying that local Postgres/libpq
+  commands must always specify `capcurve_development` explicitly because
+  omitting the database name can fall back to the username `capcurve`
+
+### Changed
+- Updated the Docker Compose Postgres healthcheck to call `pg_isready` with the
+  explicit local development database name via container env vars instead of
+  relying on libpq defaults
+- Updated local migration Make targets to run `migrate` via the backend
+  container shell so `DATABASE_URL` expands correctly inside Docker and points
+  at `capcurve_development`
+
+### Fixed
+- Fixed the local dev database mismatch that could surface as
+  `database "capcurve" does not exist` when a Postgres command omitted `-d`
+
+### Notes
+- Verification will confirm both `make up` startup and local migration commands
+  succeed against `capcurve_development`
+
 ## [2026-03-31] — Session Summary
 
 ### Added

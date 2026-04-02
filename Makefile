@@ -2,6 +2,8 @@
         shell-backend shell-db reset test tidy go-build \
         migrate-local migrate-down-local db-local
 
+MIGRATE_BIN := /go/bin/migrate
+
 # ─── Docker detection ───────────────────────────────────────────────────────
 # IN_CONTAINER is true when running inside the backend Docker container.
 # Used to switch between `docker compose exec` (outside) and direct commands (inside).
@@ -64,23 +66,23 @@ go-build-local:
 # ─── Migration targets (work from both inside and outside the container) ─────
 migrate:
 ifeq ($(IN_CONTAINER),true)
-	migrate -path /app/db/migrations -database "$(DATABASE_URL)" up
+	$(MIGRATE_BIN) -path /app/db/migrations -database "$(DATABASE_URL)" up
 else
-	docker compose exec backend migrate -path /app/db/migrations -database "$$DATABASE_URL" up
+	docker compose exec backend sh -lc '$(MIGRATE_BIN) -path /app/db/migrations -database "$$DATABASE_URL" up'
 endif
 
 migrate-down:
 ifeq ($(IN_CONTAINER),true)
-	migrate -path /app/db/migrations -database "$(DATABASE_URL)" down 1
+	$(MIGRATE_BIN) -path /app/db/migrations -database "$(DATABASE_URL)" down 1
 else
-	docker compose exec backend migrate -path /app/db/migrations -database "$$DATABASE_URL" down 1
+	docker compose exec backend sh -lc '$(MIGRATE_BIN) -path /app/db/migrations -database "$$DATABASE_URL" down 1'
 endif
 
 migrate-status:
 ifeq ($(IN_CONTAINER),true)
-	migrate -path /app/db/migrations -database "$(DATABASE_URL)" version
+	$(MIGRATE_BIN) -path /app/db/migrations -database "$(DATABASE_URL)" version
 else
-	docker compose exec backend migrate -path /app/db/migrations -database "$$DATABASE_URL" version
+	docker compose exec backend sh -lc '$(MIGRATE_BIN) -path /app/db/migrations -database "$$DATABASE_URL" version'
 endif
 
 # ─── DB shell (inside container only) ───────────────────────────────────────
