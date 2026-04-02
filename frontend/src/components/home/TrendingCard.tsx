@@ -35,7 +35,7 @@ interface TrendingCardProps {
 
 export default function TrendingCard({ rank, name, team, delta, bars, isViews = false }: TrendingCardProps) {
   return (
-    <div className="relative cursor-pointer overflow-hidden rounded-xl border border-border bg-elevated p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-elevated p-5">
       <div className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[1px] text-text-subtle">
         #{rank} · 14 day {isViews ? 'views' : 'arc move'}
       </div>

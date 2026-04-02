@@ -8,7 +8,7 @@ interface LeaderRowProps {
 
 export default function LeaderRow({ rank, name, team, value, barPct }: LeaderRowProps) {
   return (
-    <div className="flex cursor-pointer items-center gap-3 rounded-[8px] border border-border bg-elevated px-[14px] py-[10px] transition-colors hover:border-border-strong">
+    <div className="flex items-center gap-3 rounded-[8px] border border-border bg-elevated px-[14px] py-[10px]">
       <span className="w-[18px] shrink-0 text-right font-mono text-[11px] text-text-subtle">
         {rank}
       </span>

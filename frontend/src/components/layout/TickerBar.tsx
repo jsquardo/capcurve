@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
 // Mock data — replace with API-driven arc delta feed when backend endpoint is ready
@@ -13,14 +14,27 @@ const tickerItems = [
   { name: 'Gunnar Henderson', val: 'Arc +4.2', dir: '▲' },
 ]
 
-// The list is duplicated so the animation loops seamlessly:
-// animate to -50% (exactly one copy width), then repeat from 0.
+// The list is duplicated so the animation loops seamlessly.
+// We measure the actual pixel width of the first copy after render and animate
+// to exactly -oneHalfWidth so that the loop point is pixel-perfect regardless
+// of font rendering or item count changes.
 export default function TickerBar() {
+  const listRef = useRef<HTMLDivElement>(null)
+  const [oneHalfWidth, setOneHalfWidth] = useState(0)
+
+  useEffect(() => {
+    if (listRef.current) {
+      // scrollWidth covers both copies; half is the width of one copy.
+      setOneHalfWidth(listRef.current.scrollWidth / 2)
+    }
+  }, [tickerItems])
+
   return (
     <div className="overflow-hidden bg-accent py-2">
       <motion.div
-        initial={{ x: '0%' }}
-        animate={{ x: '-50%' }}
+        ref={listRef}
+        initial={{ x: 0 }}
+        animate={oneHalfWidth > 0 ? { x: -oneHalfWidth } : {}}
         transition={{ duration: 32, repeat: Infinity, ease: 'linear' }}
         className="flex w-max whitespace-nowrap"
       >

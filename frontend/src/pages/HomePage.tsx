@@ -8,10 +8,12 @@ export default function HomePage() {
     <>
       <HeroSection />
       <TrendingSection />
-      <section className="border-b border-border px-4 py-12 sm:px-6 lg:px-10">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.1fr_1fr]">
-          <StatLeadersSection />
-          <FeedSection />
+      <section className="border-b border-border">
+        <div className="shell-container py-12">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.1fr_1fr]">
+            <StatLeadersSection />
+            <FeedSection />
+          </div>
         </div>
       </section>
     </>

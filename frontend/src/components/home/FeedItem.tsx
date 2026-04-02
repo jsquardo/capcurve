@@ -6,7 +6,7 @@ interface FeedItemProps {
 
 export default function FeedItem({ type, text, meta }: FeedItemProps) {
   return (
-    <div className="flex cursor-pointer items-start gap-[10px] rounded-[8px] border border-border bg-elevated px-3 py-[10px] transition-colors hover:border-border-strong">
+    <div className="flex items-start gap-[10px] rounded-[8px] border border-border bg-elevated px-3 py-[10px]">
       <span
         className={`mt-[2px] shrink-0 rounded-[4px] px-[7px] py-[3px] text-[9px] font-bold uppercase tracking-[1px] ${
           type === 'insight'

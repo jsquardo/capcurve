@@ -23,7 +23,8 @@ export default function TrendingSection() {
   const trendData = trendTab === 'hot' ? hotTrendData : viewTrendData
 
   return (
-    <section className="border-b border-border px-4 py-12 sm:px-6 lg:px-10">
+    <section className="border-b border-border">
+      <div className="shell-container py-12">
       <div className="mb-7 flex items-end justify-between">
         <div>
           <div className="mb-[6px] text-[10px] font-semibold uppercase tracking-[2px] text-accent">
@@ -62,7 +63,7 @@ export default function TrendingSection() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {trendData.map((player) => (
           <TrendingCard
             key={player.name}
@@ -74,6 +75,7 @@ export default function TrendingSection() {
             isViews={player.isViews}
           />
         ))}
+      </div>
       </div>
     </section>
   )

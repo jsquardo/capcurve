@@ -26,7 +26,7 @@ export default function FeedSection() {
       </div>
 
       {/* Featured insight — hardcoded until auto-generated insights endpoint exists */}
-      <div className="mb-[10px] cursor-pointer rounded-xl border border-border bg-elevated p-6 transition-colors hover:border-link">
+      <div className="mb-[10px] rounded-xl border border-border bg-elevated p-6">
         <div className="mb-3 inline-flex items-center gap-[5px] rounded-[5px] border border-accent/20 bg-accent/[0.12] px-[9px] py-[3px] text-[10px] font-semibold uppercase tracking-[1px] text-accent">
           CapCurve Insight
         </div>

@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import LeaderRow from './LeaderRow'
 
 type LeaderEntry = { n: string; t: string; v: number | string }
-type LeaderCategory = 'hr' | 'avg' | 'era' | 'k9' | 'ops'
+type LeaderCategory = 'hr' | 'avg' | 'era' | 'k9' | 'peak_arc'
 
 // Mock data — replace with API responses when leaderboard endpoint is wired to the frontend
 // TODO: wire to GET /api/v1/leaderboards when frontend data-fetching is added in Phase 3
@@ -35,12 +36,13 @@ const leadersData: Record<LeaderCategory, LeaderEntry[]> = {
     { n: 'Julio Urías', t: 'LAD', v: '10.8' },
     { n: 'Shane Bieber', t: 'CLE', v: '10.3' },
   ],
-  ops: [
-    { n: 'Shohei Ohtani', t: 'LAD', v: '1.038' },
-    { n: 'Aaron Judge', t: 'NYY', v: '.999' },
-    { n: 'Yordan Alvarez', t: 'HOU', v: '.987' },
-    { n: 'Ronald Acuña Jr.', t: 'ATL', v: '.961' },
-    { n: 'Luis Robert Jr.', t: 'CWS', v: '.943' },
+  // Peak arc scores are illustrative placeholders — replace with GET /api/v1/leaderboards?cat=peak_arc
+  peak_arc: [
+    { n: 'Barry Bonds', t: 'SFG', v: 98.4 },
+    { n: 'Babe Ruth', t: 'NYY', v: 97.1 },
+    { n: 'Willie Mays', t: 'SFG', v: 95.8 },
+    { n: 'Hank Aaron', t: 'ATL', v: 94.3 },
+    { n: 'Mike Trout', t: 'LAA', v: 93.7 },
   ],
 }
 
@@ -49,7 +51,7 @@ const leaderCategories: { key: LeaderCategory; label: string }[] = [
   { key: 'avg', label: 'AVG' },
   { key: 'era', label: 'ERA' },
   { key: 'k9', label: 'K/9' },
-  { key: 'ops', label: 'OPS' },
+  { key: 'peak_arc', label: 'Peak Arc' },
 ]
 
 // Bar width for numeric stats: proportional to leader. For string stats (AVG, ERA):
@@ -74,9 +76,9 @@ export default function StatLeadersSection() {
           </div>
           <div className="font-display text-[32px] leading-none tracking-[1px]">Stat Leaders</div>
         </div>
-        <a href="/leaderboards" className="border-b border-link/30 pb-[2px] text-[13px] text-link">
+        <Link to="/leaderboards" className="border-b border-link/30 pb-[2px] text-[13px] text-link">
           Full leaderboards →
-        </a>
+        </Link>
       </div>
 
       <div className="mb-5 flex flex-wrap gap-2">
