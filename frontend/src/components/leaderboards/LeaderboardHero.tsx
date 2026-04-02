@@ -1,5 +1,5 @@
 interface LeaderboardHeroProps {
-  season: number
+  season: number | null
 }
 
 export default function LeaderboardHero({ season }: LeaderboardHeroProps) {
@@ -13,7 +13,7 @@ export default function LeaderboardHero({ season }: LeaderboardHeroProps) {
           </p>
         </div>
         <span className="rounded-full border border-border bg-elevated px-3 py-1 font-mono text-[11px] text-text-subtle">
-          {season} SEASON
+          {season === null ? 'ALL-TIME' : `${season} SEASON`}
         </span>
       </div>
     </div>

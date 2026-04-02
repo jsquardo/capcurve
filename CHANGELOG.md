@@ -1,3 +1,26 @@
+## [2026-04-02] — Session Summary (4)
+
+### Added
+- `LeaderboardSkeleton.tsx`: new component rendering configurable pulsing
+  placeholder rows that mirror `LeaderRow` layout; used as the loading state
+  on the leaderboards page.
+
+### Changed
+- `LeaderboardHero`: `season` prop widened from `number` to `number | null`;
+  renders `ALL-TIME` badge when `null`, `{year} SEASON` otherwise.
+- `LeaderboardTable`: restored `playerId={entry.player_id}` prop on `LeaderRow`;
+  removed the TODO gate — player names are now live links to `/players/:id`.
+- `LeaderboardsPage`: replaced entire `MOCK_LEADERS` / `MOCK_SEASON` block with
+  a `useQuery(['leaderboards', activeCategory, page], getLeaderboards)` call;
+  `PAGE_SIZE = 25`; hero season derived from first API entry; loading → skeleton,
+  error → styled panel, success → table + pagination driven from `meta.total_pages`.
+
+### Notes
+- `npm run build` passes cleanly; bundle is ~4 KB smaller (mock data removed).
+- End-to-end verification requires `make up` and a populated database.
+
+---
+
 ## [2026-04-02] — Session Summary (3)
 
 ### Added
