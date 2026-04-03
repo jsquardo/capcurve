@@ -1,6 +1,6 @@
 import axios from "axios";
 import type {
-  Player,
+  PlayerDetail,
   PlayerListItem,
   PlayerListResponse,
   CareerArcResponse,
@@ -32,9 +32,9 @@ export const searchPlayers = async (
   return data.data;
 };
 
-export const getPlayer = async (id: number): Promise<Player> => {
-  const { data } = await api.get(`/players/${id}`);
-  return data;
+export const getPlayer = async (id: number): Promise<PlayerDetail> => {
+  const { data } = await api.get<{ data: PlayerDetail }>(`/players/${id}`);
+  return data.data;
 };
 
 export interface GetPlayersParams {
@@ -57,7 +57,9 @@ export const getPlayers = async (
 export const getCareerArc = async (
   playerId: number,
 ): Promise<CareerArcResponse> => {
-  const { data } = await api.get(`/players/${playerId}/career-arc`);
+  const { data } = await api.get<CareerArcResponse>(
+    `/players/${playerId}/career-arc`,
+  );
   return data;
 };
 

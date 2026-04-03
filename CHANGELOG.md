@@ -1,3 +1,42 @@
+## [2026-04-03] — Session Summary (7)
+
+### Added
+- `frontend/src/components/players/PlayerPageSkeleton.tsx`: pulsing placeholder
+  mirroring the full player profile layout — hero, chart, projection panel, stats
+  table, and comparable players row. Used as the `isLoading` branch in `PlayerPage.tsx`.
+- `frontend/src/components/player/PlayerHero.tsx`: top card on the player profile.
+  Renders avatar (headshot or initials fallback), Bebas Neue name, position/team,
+  active/retired badge, career span, and 6 stat cards. First two are always Arc Score
+  (last non-zero historical value_score) and Peak Arc (from `arcMeta`). Next four are
+  position-appropriate: hitters get HR/AVG/OBP/RBI, pitchers get W/ERA/WHIP/K9,
+  two-way gets HR/AVG/ERA/WHIP. Rate stats aggregated correctly — no averaging averages.
+
+### Changed
+- `frontend/src/types/index.ts`: removed stale `season_stats?`/`career_arc?` from
+  `Player`; deleted old DB-shaped `CareerArc` and wrong `CareerArcResponse`; added
+  `HittingStats`, `PitchingStats`, `CareerStatItem`, `PlayerDetail`, `CareerArcPlayer`,
+  `CareerArcMeta`, `CareerArcTimelineItem`, `ProjectionPoint`, `ConfidenceBandPoint`,
+  `ComparablePlayer`, `CareerArcProjection`, `CareerArcData`, corrected `CareerArcResponse`.
+- `frontend/src/api/index.ts`: `getPlayer` returns `Promise<PlayerDetail>` and unwraps
+  `{ data: ... }` envelope; `getCareerArc` uses typed `api.get<CareerArcResponse>`;
+  `Player` import replaced with `PlayerDetail`.
+- `frontend/src/pages/PlayerPage.tsx`: wired `PlayerPageSkeleton` for loading state;
+  wired `PlayerHero`; `arcResponse?.data` unwrapped and passed as `arcData`.
+
+### Fixed
+- `PlayerHero` Arc Score = 0.0: timeline selection now filters `value_score > 0`
+  before taking the last historical item, skipping sub-threshold tail seasons.
+- GORM zero-value bool bug (`ingestion/service.go`): `Assign(struct{})` replaced
+  with `Assign(map[string]any{})` so `active: false` from the MLB API is written
+  explicitly. Struct-based Assign silently skips zero-value bool fields, causing
+  retired players to stay `active: true` indefinitely. Corrected stale data for
+  Griffey, Pujols, and Maddux directly in the DB.
+
+### Notes
+- GORM zero-value bool rule now documented in AGENTS.md Notes section.
+
+---
+
 ## [2026-04-03] — Session Summary (6)
 
 ### Fixed

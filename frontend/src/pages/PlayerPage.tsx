@@ -1,6 +1,8 @@
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getPlayer, getCareerArc } from '@/api'
+import PlayerPageSkeleton from '@/components/players/PlayerPageSkeleton'
+import PlayerHero from '@/components/player/PlayerHero'
 
 export default function PlayerPage() {
   const { id } = useParams<{ id: string }>()
@@ -11,24 +13,21 @@ export default function PlayerPage() {
     queryFn: () => getPlayer(playerId),
   })
 
-  const { data: _arcData } = useQuery({
+  const { data: arcResponse } = useQuery({
     queryKey: ['career-arc', playerId],
     queryFn: () => getCareerArc(playerId),
     enabled: !!playerId,
   })
 
-  if (isLoading) return <div className="text-neutral">Loading...</div>
-  if (!player) return <div className="text-overpaid">Player not found</div>
+  if (isLoading) return <PlayerPageSkeleton />
+  if (!player) return <div className="text-danger">Player not found</div>
+
+  const arcData = arcResponse?.data ?? null
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-5xl text-white">
-          {player.first_name.toUpperCase()} {player.last_name.toUpperCase()}
-        </h1>
-        <p className="text-neutral mt-1">{player.position} · {player.active ? 'Active' : 'Retired'}</p>
-      </div>
-      <p className="text-neutral">Charts coming soon...</p>
+    <div className="space-y-6">
+      <PlayerHero player={player} arcData={arcData} />
+      <p className="text-text-muted text-sm">Charts coming soon…</p>
     </div>
   )
 }

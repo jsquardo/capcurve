@@ -371,7 +371,21 @@ func (s *Service) persistPlayerAndSeasons(ctx context.Context, playerRecord *Pla
 			ImageURL:    playerRecord.ImageURL,
 		}
 
-		if err := tx.Where("mlb_id = ?", playerRecord.MLBID).Assign(player).FirstOrCreate(&player).Error; err != nil {
+		// Use a map for Assign so that Active:false is written explicitly.
+		// Passing a struct causes GORM to skip zero-value bool fields, which
+		// means retiring a player (active=false from the API) would never
+		// overwrite an existing active=true row.
+		playerAttrs := map[string]any{
+			"first_name":    playerRecord.FirstName,
+			"last_name":     playerRecord.LastName,
+			"position":      playerRecord.Position,
+			"bats":          playerRecord.Bats,
+			"throws":        playerRecord.Throws,
+			"date_of_birth": playerRecord.DateOfBirth,
+			"active":        playerRecord.Active,
+			"image_url":     playerRecord.ImageURL,
+		}
+		if err := tx.Where("mlb_id = ?", playerRecord.MLBID).Assign(playerAttrs).FirstOrCreate(&player).Error; err != nil {
 			return err
 		}
 
