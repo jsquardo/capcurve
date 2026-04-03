@@ -1,3 +1,46 @@
+## [2026-04-03] — Session Summary (8)
+
+### Added
+- `frontend/src/components/player/CareerArcChart.tsx`: Recharts `ComposedChart`
+  rendering the full career arc. Gold solid line for historical scores, dashed
+  purple line for projections, shaded confidence band (suppressed when all
+  projected scores are 0), gold `ReferenceArea` for peak window, two toggle
+  buttons (Peak Window / Projection), custom tooltip with year/age/team/band,
+  Y axis fixed 0–100 with 25-point ticks, X axis numeric scale.
+- `frontend/src/components/player/ProjectionPanel.tsx`: purple-tinted panel
+  below the chart for active players. Per-season projection cards (year/score/
+  confidence range), comparable player chips as `<Link>` elements. Returns null
+  for ineligible/retired players; shows graceful message when status is not ready
+  or all projected scores are 0.
+- `frontend/src/components/player/SeasonStatsTable.tsx`: collapsible, sortable
+  season-by-season stats table. Auto-detects hitter/pitcher/two-way by scanning
+  all seasons for workload presence. Peak rows tinted gold with PEAK micro-tag.
+  Click-to-sort all columns with ▲/▼ indicator. Null Savant fields render as —.
+- `frontend/src/components/player/ComparablePlayersRow.tsx`: horizontal scrollable
+  row of comparable player cards, each a full `<Link>` to the player's profile.
+  Initials avatar fallback; hover border-accent treatment; returns null when empty.
+
+### Changed
+- `frontend/src/pages/PlayerPage.tsx`: fully composed player profile page — wires
+  all five components (`PlayerHero`, `CareerArcChart`, `ProjectionPanel`,
+  `SeasonStatsTable`, `ComparablePlayersRow`) in sequence.
+
+### Fixed
+- `CareerArcChart` X axis rendering: added `type="number"` and `domain` props so
+  Recharts positions points by year value not category index; removed child `<Area>`
+  sub-arrays that caused misaligned chart rendering; fixed duplicate year labels
+  from join-point by passing explicit deduplicated `ticks` array; first/last year
+  always shown regardless of even/odd thinning.
+- Projection confidence band suppressed when all `projection.points` have
+  `value_score = 0` (broken comparable pool produces meaningless band data).
+
+### Notes
+- P1 backend bug: projection comparable pool must restrict to `players.active = false`.
+  Active players' futures cannot anchor a confidence band. Currently causes projected
+  scores to collapse to 0 for active players. Fix deferred to next session.
+
+---
+
 ## [2026-04-03] — Session Summary (7)
 
 ### Added
