@@ -1,4 +1,21 @@
-const POSITIONS = ['SP', 'RP', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH']
+// Values must match the exact strings stored in players.position, which come
+// directly from MLB Stats API primaryPosition.name (e.g. "First Base", not "1B").
+const POSITIONS: { label: string; value: string }[] = [
+  { label: 'Pitcher',   value: 'Pitcher'           },
+  { label: 'SP',        value: 'Starting Pitcher'  },
+  { label: 'RP',        value: 'Relief Pitcher'    },
+  { label: 'C',         value: 'Catcher'           },
+  { label: '1B',        value: 'First Base'        },
+  { label: '2B',        value: 'Second Base'       },
+  { label: '3B',        value: 'Third Base'        },
+  { label: 'SS',        value: 'Shortstop'         },
+  { label: 'OF',        value: 'Outfielder'        },
+  { label: 'LF',        value: 'Left Field'        },
+  { label: 'CF',        value: 'Center Field'      },
+  { label: 'RF',        value: 'Right Field'       },
+  { label: 'DH',        value: 'Designated Hitter' },
+  { label: 'Two-Way',   value: 'Two-Way Player'    },
+]
 
 const SORT_OPTIONS = [
   { value: 'name',         label: 'Name A–Z'      },
@@ -73,7 +90,7 @@ export default function PlayerFilters({
       >
         <option value="">All Positions</option>
         {POSITIONS.map(pos => (
-          <option key={pos} value={pos}>{pos}</option>
+          <option key={pos.value} value={pos.value}>{pos.label}</option>
         ))}
       </select>
 

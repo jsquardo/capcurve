@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 
 type Theme = 'dark' | 'light'
 
@@ -70,9 +70,13 @@ export default function Navbar() {
               </NavLink>
             </li>
           ))}
-          {/* TODO: wire to /players when PlayerListPage exists */}
           <li>
-            <span className="nav-link opacity-60 cursor-default">Players ▾</span>
+            <NavLink
+              to="/players"
+              className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+            >
+              Players
+            </NavLink>
           </li>
           {/* TODO: wire to /playground when PlaygroundPage is built */}
           <li>
@@ -93,13 +97,12 @@ export default function Navbar() {
               className="w-[240px] rounded-[8px] border border-border bg-elevated py-2 pl-9 pr-4 text-[13px] text-text outline-none placeholder:text-text-subtle transition focus:border-accent"
             />
           </div>
-          {/* TODO: wire to /players when PlayerListPage exists */}
-          <button
-            type="button"
+          <Link
+            to="/players"
             className="rounded-[7px] bg-accent px-[18px] py-[7px] text-[13px] font-medium text-[#0a0d12] transition hover:bg-accent-strong"
           >
             Explore
-          </button>
+          </Link>
           <button
             type="button"
             onClick={toggleTheme}
@@ -150,8 +153,15 @@ export default function Navbar() {
                   {item.label}
                 </NavLink>
               ))}
-              {/* TODO: wire to /players when PlayerListPage exists */}
-              <div className="text-[13px] font-medium text-text-muted opacity-60">Players ▾</div>
+              <NavLink
+                to="/players"
+                onClick={closeMobileMenu}
+                className={({ isActive }) =>
+                  `block text-[13px] font-medium ${isActive ? 'text-text' : 'text-text-muted'}`
+                }
+              >
+                Players
+              </NavLink>
               {/* TODO: wire to /playground when PlaygroundPage is built */}
               <div className="text-[13px] font-medium text-text-muted opacity-60">Playground</div>
             </div>

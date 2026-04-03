@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import TrendingCard from './TrendingCard'
 
 type TrendItem = {
@@ -41,10 +42,12 @@ export default function TrendingSection() {
           </div>
           <div className="font-display text-[32px] leading-none tracking-[1px]">Trending Players</div>
         </div>
-        {/* TODO: wire to /players when PlayerListPage exists */}
-        <span className="border-b border-link/30 pb-[2px] text-[13px] text-link">
+        <Link
+          to="/players"
+          className="border-b border-link/30 pb-[2px] text-[13px] text-link hover:border-link transition-colors"
+        >
           View all players →
-        </span>
+        </Link>
       </div>
 
       <div className="mb-6 flex border-b border-border">

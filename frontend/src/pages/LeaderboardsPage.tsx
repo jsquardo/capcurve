@@ -9,7 +9,11 @@ import LeaderboardPagination from '@/components/leaderboards/LeaderboardPaginati
 import LeaderboardSkeleton from '@/components/leaderboards/LeaderboardSkeleton'
 
 const PAGE_SIZE = 25
-const CURRENT_SEASON = 2025
+
+// A season is considered complete once October 1 of that year has passed
+// (mirrors the backend's completed-season cutoff rule).
+const _now = new Date()
+const CURRENT_SEASON = _now.getMonth() >= 9 ? _now.getFullYear() : _now.getFullYear() - 1
 
 export default function LeaderboardsPage() {
   const [activeCategory, setActiveCategory] = useState<LeaderboardCategory>('peak_arc')

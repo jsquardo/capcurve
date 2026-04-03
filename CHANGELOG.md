@@ -1,3 +1,25 @@
+## [2026-04-03] — Session Summary (6)
+
+### Fixed
+- `PlayerFilters.tsx`: replaced abbreviated `POSITIONS` string array (`1B`, `LF`,
+  `DH`, etc.) with `{ label, value }` objects; `value` now matches the exact MLB
+  `PrimaryPosition.Name` strings stored in `players.position` (`First Base`,
+  `Outfielder`, `Two-Way Player`, etc.). Added four previously missing positions:
+  `Pitcher`, `Starting Pitcher`, `Relief Pitcher`, `Catcher`.
+- `Navbar.tsx`: wired desktop "Players" stub and mobile "Players" stub to
+  `<NavLink to="/players">`; converted "Explore" button to `<Link to="/players">`;
+  removed all TODO comments blocked on PlayerListPage not existing.
+- `TrendingSection.tsx`: converted "View all players →" `<span>` to
+  `<Link to="/players">` with hover transition.
+- `LeaderboardsPage.tsx`: replaced hardcoded `CURRENT_SEASON = 2025` with a
+  derived value — `month >= October ? currentYear : currentYear - 1` — matching
+  the backend's October 1 completed-season cutoff rule.
+
+### Notes
+- No backend changes this session.
+
+---
+
 ## [2026-04-02] — Session Summary (5)
 
 ### Fixed
