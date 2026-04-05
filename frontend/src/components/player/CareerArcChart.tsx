@@ -38,7 +38,7 @@ interface ChartPoint {
 }
 
 function buildChartData(arcData: CareerArcData): ChartPoint[] {
-  const historicalPoints: ChartPoint[] = arcData.timeline
+  const rawHistorical: ChartPoint[] = arcData.timeline
     .filter(t => !t.is_projection)
     .map(t => ({
       year: t.year,
@@ -51,6 +51,15 @@ function buildChartData(arcData: CareerArcData): ChartPoint[] {
       is_peak: t.is_peak,
       is_projection: false,
     }))
+
+  // Drop trailing zero-score points — these are incomplete in-progress seasons
+  // that haven't crossed the PA/IP threshold yet. Mid-career zeros (injury years)
+  // are legitimate data and must be preserved.
+  let trailingZeroCutoff = rawHistorical.length
+  while (trailingZeroCutoff > 0 && (rawHistorical[trailingZeroCutoff - 1].historical ?? 0) === 0) {
+    trailingZeroCutoff--
+  }
+  const historicalPoints = rawHistorical.slice(0, trailingZeroCutoff)
 
   const { points: projPoints, confidence_band } = arcData.projection
 
@@ -69,9 +78,12 @@ function buildChartData(arcData: CareerArcData): ChartPoint[] {
     is_projection: true,
   }))
 
-  // Duplicate the last historical point as the start of the projection series so the
-  // gold line and purple dashed line share a seamless join at the handoff year.
-  const lastHistorical = historicalPoints[historicalPoints.length - 1]
+  // Duplicate the last *qualified* historical point (value_score > 0) as the start of
+  // the projection series so the gold line and purple dashed line join seamlessly.
+  // We skip zero-score tail entries (e.g. an in-progress season below the PA threshold)
+  // to avoid the gold line visibly dipping to 0 right before the projection picks up.
+  const lastHistorical = [...historicalPoints].reverse().find(p => (p.historical ?? 0) > 0)
+    ?? historicalPoints[historicalPoints.length - 1]
   if (lastHistorical && projectionPoints.length > 0) {
     projectionPoints.unshift({
       ...lastHistorical,

@@ -126,9 +126,16 @@ func (s *Service) Build(player models.Player, history []models.SeasonStat, playe
 }
 
 func (s *Service) projectPoints(history []models.SeasonStat, profile roleProfile) []Point {
-	latest := history[len(history)-1]
-	weightedRecent := weightedRecentAverage(history)
-	trend := weightedTrend(history)
+	// Only seasons with a real score are useful baselines. Sub-threshold or
+	// incomplete seasons (e.g. an in-progress season below 100 PA) have a
+	// value_score of 0, which would anchor the projection at zero.
+	qualifiedHistory := filterQualifiedSeasons(history)
+	if len(qualifiedHistory) == 0 {
+		return []Point{}
+	}
+	latest := qualifiedHistory[len(qualifiedHistory)-1]
+	weightedRecent := weightedRecentAverage(qualifiedHistory)
+	trend := weightedTrend(qualifiedHistory)
 
 	points := make([]Point, 0, s.projectionHorizon)
 	for horizon := 1; horizon <= s.projectionHorizon; horizon++ {
@@ -591,6 +598,16 @@ func mean(values []float64) float64 {
 	}
 
 	return total / float64(len(values))
+}
+
+func filterQualifiedSeasons(history []models.SeasonStat) []models.SeasonStat {
+	qualified := make([]models.SeasonStat, 0, len(history))
+	for _, s := range history {
+		if s.ValueScore > 0 {
+			qualified = append(qualified, s)
+		}
+	}
+	return qualified
 }
 
 func lastNSeasons(history []models.SeasonStat, count int) []models.SeasonStat {

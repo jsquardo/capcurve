@@ -11,11 +11,11 @@ export default function ProjectionPanel({ projection }: ProjectionPanelProps) {
   // Do not render for ineligible players (retired) — they have complete arcs.
   if (!projection.eligible) return null
 
-  // Treat ready-but-empty the same as insufficient_data — there's nothing to show.
+  // Gate on ready + non-empty points. Score values are not part of this check —
+  // a projection that lands at the floor is still a valid result worth showing.
   const hasData =
     projection.status === 'ready' &&
-    projection.points.length > 0 &&
-    projection.points.some(p => p.value_score > 0)
+    projection.points.length > 0
 
   const insufficientReason =
     projection.reason.trim() ||
@@ -23,9 +23,9 @@ export default function ProjectionPanel({ projection }: ProjectionPanelProps) {
       ? 'Not enough seasons to generate a projection.'
       : 'Projection data is not yet available.')
 
-  // Confidence band is only meaningful when projected scores are non-zero.
   const bandMap = new Map(projection.confidence_band.map(b => [b.year, b]))
-  const showBand = hasData
+  // Confidence band is only meaningful when at least one projected score is non-zero.
+  const showBand = hasData && projection.points.some(p => p.value_score > 0)
 
   const seasonCount = projection.points.length
   const compCount = projection.comparables.length

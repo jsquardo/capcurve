@@ -1,3 +1,51 @@
+## [2026-04-05] — Session Summary (9)
+
+### Added
+- `backend/internal/projection/service.go`: `filterQualifiedSeasons` helper that
+  keeps only `SeasonStat` rows where `ValueScore > 0`. Applied at the top of
+  `projectPoints` so the age-curve baseline and recent-trend calculation are never
+  anchored on a sub-threshold or in-progress zero-score season.
+- Two regression tests in `backend/internal/projection/service_test.go`:
+  - `TestServiceBuildReturnsReadyEmptyPointsWhenAllHistoryIsZeroScore` — player
+    with only zero-score seasons returns `status: "ready"` with empty points.
+  - `TestServiceBuildSkipsZeroScoreTrailingSeasonWhenProjecting` — strong career
+    with a zero trailing season projects correctly from the last qualified season.
+
+### Changed
+- `frontend/src/components/player/CareerArcChart.tsx`: trailing zero-score historical
+  points (e.g. an in-progress season below the PA threshold) are now trimmed before
+  rendering. Mid-career zeros (legitimate injury years) are preserved. The projection
+  bridge anchor also updated to use the last non-zero historical point, so the purple
+  projection line joins cleanly after the last real season.
+- `frontend/src/components/player/ProjectionPanel.tsx`: separated `hasData` (render
+  gate: `status === 'ready' && points.length > 0`) from `showBand` (band gate: at
+  least one projected score > 0). Projections that land at the floor now render
+  their cards instead of silently showing the insufficient-data message.
+- `frontend/src/pages/PlayerPage.tsx`: added `isArcLoading` and `isArcError` from
+  the `useQuery` destructure. Chart region now shows a pulsing skeleton during load
+  and an error message on failure; hero, stats table, and other sections remain
+  visible throughout. Previously the chart area silently disappeared or popped in
+  late with no feedback.
+
+### Fixed
+- Projection zero-score bug: active players (e.g. Aaron Judge) were receiving a
+  single `{value_score: 0}` projection point because an incomplete 2026 in-season
+  row was becoming `latest` in `projectPoints`, anchoring the age curve at 0 and
+  immediately hitting the projection floor.
+- Chart gold line dipping to 0: trailing zero-score historical points removed from
+  the `historicalPoints` array before Recharts renders them, preventing the visible
+  dip at the current incomplete season.
+- `ProjectionPanel` zero-floor display bug: projections with all-zero scores were
+  being suppressed entirely instead of rendered (the band is suppressed, not the panel).
+
+### Notes
+- All 6 projection-package tests pass. Pre-existing handler test failure
+  (`TestLoadProjectionComparableCandidatesOnlyReturnsRetiredPlayers`) is a test
+  isolation issue against the shared dev DB (expects 1 player, finds 4 because the
+  real seeded retired players are present). Not introduced by this session.
+
+---
+
 ## [2026-04-03] — Session Summary (8)
 
 ### Added

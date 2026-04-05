@@ -17,7 +17,11 @@ export default function PlayerPage() {
     queryFn: () => getPlayer(playerId),
   })
 
-  const { data: arcResponse } = useQuery({
+  const {
+    data: arcResponse,
+    isLoading: isArcLoading,
+    isError: isArcError,
+  } = useQuery({
     queryKey: ['career-arc', playerId],
     queryFn: () => getCareerArc(playerId),
     enabled: !!playerId,
@@ -28,10 +32,31 @@ export default function PlayerPage() {
 
   const arcData = arcResponse?.data ?? null
 
+  // Placeholder shown in the chart region while the arc request is in-flight or
+  // if it fails — keeps the hero and stats table visible rather than hiding the page.
+  const arcChartContent = (() => {
+    if (isArcLoading) {
+      return (
+        <div className="h-[320px] animate-pulse rounded-[8px] bg-panel" />
+      )
+    }
+    if (isArcError) {
+      return (
+        <div className="flex h-[160px] items-center justify-center rounded-[8px] border border-border bg-panel text-[13px] text-text-subtle">
+          Career arc data could not be loaded.
+        </div>
+      )
+    }
+    if (arcData) {
+      return <CareerArcChart arcData={arcData} />
+    }
+    return null
+  })()
+
   return (
     <div className="space-y-6">
       <PlayerHero player={player} arcData={arcData} />
-      {arcData && <CareerArcChart arcData={arcData} />}
+      {arcChartContent}
       {arcData && <ProjectionPanel projection={arcData.projection} />}
       <SeasonStatsTable seasons={player.career_stats ?? []} arcMeta={arcData?.arc} />
       {arcData && arcData.projection.comparables.length > 0 && (

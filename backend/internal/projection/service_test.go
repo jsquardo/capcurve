@@ -107,6 +107,52 @@ func TestServiceBuildReturnsIneligibleForRetiredPlayers(t *testing.T) {
 	require.Empty(t, result.Points)
 }
 
+func TestServiceBuildReturnsReadyEmptyPointsWhenAllHistoryIsZeroScore(t *testing.T) {
+	// Regression: a player with only sub-threshold (zero-score) seasons in their
+	// history must return status "ready" with empty points rather than projecting
+	// from a zero baseline, which would produce a misleading zero projection.
+	service := NewService()
+
+	player := models.Player{Model: testModel(1), MLBID: 1001, FirstName: "Injured", LastName: "Player", Position: "OF", Active: true}
+	history := []models.SeasonStat{
+		testSeason(1, 1, 2022, 28, 0, 40, 0, 2, 1, 0.210, 0.270, 0.310),
+		testSeason(2, 1, 2023, 29, 0, 30, 0, 1, 0, 0.200, 0.255, 0.290),
+		testSeason(3, 1, 2024, 30, 0, 20, 0, 0, 0, 0.185, 0.240, 0.265),
+	}
+
+	result := service.Build(player, history, nil, nil)
+
+	require.Equal(t, "ready", result.Status)
+	require.True(t, result.Eligible)
+	require.Empty(t, result.Points)
+	require.Empty(t, result.ConfidenceBand)
+}
+
+func TestServiceBuildSkipsZeroScoreTrailingSeasonWhenProjecting(t *testing.T) {
+	// Regression: an active player whose most recent season is in-progress /
+	// sub-threshold (value_score=0) must project from their last qualified season,
+	// not from the zero row. Projections must be non-zero when prior seasons are strong.
+	service := NewService()
+
+	player := models.Player{Model: testModel(1), MLBID: 1001, FirstName: "Aaron", LastName: "Judge", Position: "Outfielder", Active: true}
+	history := []models.SeasonStat{
+		testSeason(1, 1, 2022, 30, 72, 580, 0, 40, 8, 0.311, 0.425, 0.686),
+		testSeason(2, 1, 2023, 31, 68, 562, 0, 37, 6, 0.267, 0.406, 0.613),
+		testSeason(3, 1, 2024, 32, 70, 571, 0, 58, 10, 0.322, 0.458, 0.701),
+		// 2025: in-progress / sub-threshold — must be ignored as projection baseline
+		testSeason(4, 1, 2025, 33, 0, 15, 0, 2, 1, 0.250, 0.310, 0.450),
+	}
+
+	result := service.Build(player, history, nil, nil)
+
+	require.Equal(t, "ready", result.Status)
+	require.True(t, result.Eligible)
+	require.NotEmpty(t, result.Points)
+	for _, point := range result.Points {
+		require.Greater(t, point.ValueScore, 0.0, "projected value_score should be > 0 when recent qualified seasons are strong")
+	}
+}
+
 func testSeason(id uint, playerID int, year, age int, valueScore float64, plateAppearances int, inningsPitched float64, homeRuns, stolenBases int, battingAvg, obp, slg float64) models.SeasonStat {
 	return models.SeasonStat{
 		Model:            testModel(id),
