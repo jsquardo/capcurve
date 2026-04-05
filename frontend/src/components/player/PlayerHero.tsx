@@ -79,9 +79,9 @@ interface StatCardProps {
 
 function StatCard({ label, value, accent = false }: StatCardProps) {
   return (
-    <div className="flex min-w-[72px] flex-col justify-center rounded-[6px] border border-border bg-panel px-3 py-2.5 sm:min-w-[84px]">
-      <div className="text-[10px] uppercase tracking-[0.06em] text-text-subtle">{label}</div>
-      <div className={`mt-1 font-mono text-[15px] font-medium tabular-nums ${accent ? 'text-accent' : 'text-text'}`}>
+    <div className="flex min-w-[80px] flex-col justify-center rounded-[6px] border border-border bg-panel px-3 py-3 sm:min-w-[96px]">
+      <div className="text-[11px] uppercase tracking-[0.06em] text-text-subtle">{label}</div>
+      <div className={`mt-1 font-mono text-[18px] font-medium tabular-nums ${accent ? 'text-accent' : 'text-text'}`}>
         {value}
       </div>
     </div>
@@ -188,7 +188,7 @@ export default function PlayerHero({ player, arcData }: PlayerHeroProps) {
         </div>
 
         {/* Stat cards — 2 arc + 4 position-specific */}
-        <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+        <div className="flex flex-wrap gap-2 sm:flex-1 sm:flex-nowrap sm:justify-between">
           <StatCard
             label="Arc Score"
             value={currentArcScore !== null ? fmt(currentArcScore, 1) : '—'}

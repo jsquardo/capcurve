@@ -26,6 +26,10 @@
   and an error message on failure; hero, stats table, and other sections remain
   visible throughout. Previously the chart area silently disappeared or popped in
   late with no feedback.
+- `frontend/src/components/player/PlayerHero.tsx`: stat card value font `15px` →
+  `18px`, label font `10px` → `11px`, padding `py-2.5` → `py-3`, min-width
+  `72px/84px` → `80px/96px`. Cards container gains `sm:flex-1 sm:justify-between`
+  so the 6 cards fill the full right half of the hero on desktop.
 
 ### Fixed
 - Projection zero-score bug: active players (e.g. Aaron Judge) were receiving a
