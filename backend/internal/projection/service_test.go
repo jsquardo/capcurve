@@ -153,6 +153,57 @@ func TestServiceBuildSkipsZeroScoreTrailingSeasonWhenProjecting(t *testing.T) {
 	}
 }
 
+func TestServiceBuildInfersRoleFromQualifiedHistoryNotTrailingZeroSeason(t *testing.T) {
+	// Regression: Build() must derive the role profile from the last *qualified*
+	// season (value_score > 0), not the raw history tail. A starting pitcher whose
+	// most recent row is a sub-threshold/in-progress season with no pitching stats
+	// would previously be misclassified as a hitter, causing a retired pitcher
+	// comparable to be rejected on broadRole mismatch and producing no comparables.
+	service := NewService()
+
+	pitcher := models.Player{Model: testModel(1), MLBID: 2001, FirstName: "Max", LastName: "Scherzer", Position: "SP", Active: true}
+	pitcherHistory := []models.SeasonStat{
+		testPitchSeason(1, 1, 2022, 37, 55, 0, 180.0, 10, 194),
+		testPitchSeason(2, 1, 2023, 38, 48, 0, 162.0, 9, 173),
+		testPitchSeason(3, 1, 2024, 39, 52, 0, 172.0, 9, 183),
+		// 2025: in-progress / sub-threshold — no pitching stats yet recorded
+		testPitchSeason(4, 1, 2025, 40, 0, 0, 0, 0, 0),
+	}
+
+	retiredPitcher := models.Player{Model: testModel(2), MLBID: 2002, FirstName: "Roger", LastName: "Clemens", Position: "SP", Active: false}
+	allStats := []models.SeasonStat{
+		testPitchSeason(5, 2, 2000, 37, 54, 0, 175.0, 9, 188),
+		testPitchSeason(6, 2, 2001, 38, 50, 0, 165.0, 8, 178),
+		testPitchSeason(7, 2, 2002, 39, 56, 0, 180.0, 10, 197),
+		testPitchSeason(8, 2, 2003, 40, 45, 0, 145.0, 7, 161),
+		testPitchSeason(9, 2, 2004, 41, 38, 0, 120.0, 6, 132),
+	}
+
+	result := service.Build(pitcher, pitcherHistory, []models.Player{retiredPitcher}, allStats)
+
+	require.Equal(t, "ready", result.Status)
+	// The retired pitcher comparable must be found. With the old bug (role inferred
+	// from the trailing zero season), broadRole would be "hitter" and the comparable
+	// would be rejected, producing zero comparables.
+	require.Len(t, result.Comparables, 1, "role must be inferred from qualified history so the pitcher comparable is accepted")
+	require.Equal(t, retiredPitcher.ID, result.Comparables[0].PlayerID)
+}
+
+func testPitchSeason(id uint, playerID int, year, age int, valueScore float64, plateAppearances int, inningsPitched float64, gamesStarted, strikeouts int) models.SeasonStat {
+	return models.SeasonStat{
+		Model:            testModel(id),
+		PlayerID:         playerID,
+		Year:             year,
+		Age:              age,
+		ValueScore:       valueScore,
+		PlateAppearances: plateAppearances,
+		InningsPitched:   inningsPitched,
+		GamesStarted:     gamesStarted,
+		GamesPlayed:      gamesStarted,
+		Strikeouts:       strikeouts,
+	}
+}
+
 func testSeason(id uint, playerID int, year, age int, valueScore float64, plateAppearances int, inningsPitched float64, homeRuns, stolenBases int, battingAvg, obp, slg float64) models.SeasonStat {
 	return models.SeasonStat{
 		Model:            testModel(id),

@@ -353,10 +353,26 @@ func TestLoadProjectionComparableCandidatesOnlyReturnsRetiredPlayers(t *testing.
 
 	candidates, candidateStats, err := handler.loadProjectionComparableCandidates(target.ID)
 	require.NoError(t, err)
-	require.Len(t, candidates, 1)
-	require.Equal(t, retiredComp.ID, candidates[0].ID)
-	require.Len(t, candidateStats, 1)
-	require.Equal(t, int(retiredComp.ID), candidateStats[0].PlayerID)
+
+	// The DB is shared with other tests and seeded retired players, so we cannot
+	// assert an exact count. Instead, assert the invariants that matter:
+	// - the target player itself is excluded
+	// - the active comp is excluded (active = true must be filtered out)
+	// - the retired comp is present (active = false must be included)
+	// - every returned candidate is retired (active = false)
+	candidateIDs := make(map[uint]bool, len(candidates))
+	for _, c := range candidates {
+		candidateIDs[c.ID] = true
+		require.False(t, c.Active, "loadProjectionComparableCandidates must not return active players")
+	}
+	require.False(t, candidateIDs[target.ID], "loadProjectionComparableCandidates must exclude the target player")
+	require.False(t, candidateIDs[activeComp.ID], "loadProjectionComparableCandidates must exclude active players")
+	require.True(t, candidateIDs[retiredComp.ID], "loadProjectionComparableCandidates must include retired players")
+
+	// Every returned stat row must belong to one of the returned candidates.
+	for _, stat := range candidateStats {
+		require.True(t, candidateIDs[uint(stat.PlayerID)], "candidateStats must only contain rows for returned candidates")
+	}
 }
 
 type testPlayerFixture struct {

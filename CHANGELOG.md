@@ -1,3 +1,51 @@
+## [2026-04-05] — Session Summary (11)
+
+### Added
+- `backend/internal/projection/service_test.go`: regression test
+  `TestServiceBuildInfersRoleFromQualifiedHistoryNotTrailingZeroSeason` — a
+  starting pitcher with a trailing zero-score season must be classified as a
+  pitcher (not a hitter) and must match a retired-pitcher comparable.
+
+### Changed
+- `backend/internal/projection/service.go`: `Build()` now calls
+  `filterQualifiedSeasons(history)` once after the `len(history) == 0` guard,
+  producing `qualifiedHistory`. An additional early-return handles the
+  all-zero-history case (`status: "ready"`, empty results). `qualifiedHistory`
+  is threaded to all three previously raw-history callsites:
+  - `inferRoleProfile` — uses last qualified season as `latest`, preventing a
+    sub-threshold trailing row from misclassifying a pitcher as a hitter.
+  - `findComparableMatches` — anchors comparable age and trajectory similarity
+    to the correct career stage.
+  - `buildConfidenceBands` — `recentVolatility` no longer inflates band width
+    from zero-to-real season deltas.
+- `backend/internal/handlers/players_test.go`:
+  `TestLoadProjectionComparableCandidatesOnlyReturnsRetiredPlayers` assertion
+  rewritten from exact `Len == 1` / ID match (brittle against shared dev DB) to
+  invariant-based checks: all returned candidates are retired, target and active
+  comp are absent, retired comp is present, all stat rows belong to returned
+  candidates.
+
+### Notes
+- All packages pass `make test`.
+
+---
+
+## [2026-04-05] — Session Summary (10)
+
+### Changed
+- `AGENTS.md`: added a permanent Phase 2 projection rule clarifying that
+  qualified-season filtering (`value_score > 0`) applies to the full projection
+  baseline, not just point generation.
+- `AGENTS.md`: updated Current State so the next session starts with the remaining
+  projection baseline bug, then the handler test isolation fix, before any
+  further Phase 3 polish or Phase 4 work.
+
+### Notes
+- This was a documentation-only follow-up to the code review. No application
+  code changed in this session.
+
+---
+
 ## [2026-04-05] — Session Summary (9)
 
 ### Added

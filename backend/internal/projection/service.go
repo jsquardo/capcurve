@@ -99,11 +99,29 @@ func (s *Service) Build(player models.Player, history []models.SeasonStat, playe
 		}
 	}
 
-	latest := history[len(history)-1]
+	// Use only qualified seasons (value_score > 0) as the baseline for role
+	// inference, comparable matching, and confidence-band volatility. Sub-threshold
+	// or in-progress seasons score 0 and would otherwise distort all three paths
+	// (e.g. a trailing in-progress season with no pitching stats would wrongly
+	// classify a starter as a hitter, misalign the comparable anchor age by 1+
+	// years, and inflate fallback volatility against real-season deltas).
+	qualifiedHistory := filterQualifiedSeasons(history)
+	if len(qualifiedHistory) == 0 {
+		return Result{
+			Status:         "ready",
+			Eligible:       true,
+			Reason:         "",
+			Points:         []Point{},
+			ConfidenceBand: []ConfidenceBand{},
+			Comparables:    []Comparable{},
+		}
+	}
+
+	latest := qualifiedHistory[len(qualifiedHistory)-1]
 	profile := inferRoleProfile(player, latest)
 	points := s.projectPoints(history, profile)
-	matches := s.findComparableMatches(player, history, profile, players, stats)
-	bands := s.buildConfidenceBands(points, history, matches)
+	matches := s.findComparableMatches(player, qualifiedHistory, profile, players, stats)
+	bands := s.buildConfidenceBands(points, qualifiedHistory, matches)
 
 	comparables := make([]Comparable, 0, len(matches))
 	for _, match := range matches {
