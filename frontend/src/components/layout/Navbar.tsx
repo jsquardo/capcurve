@@ -1,12 +1,36 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import NavDropdown, { type DropdownItem } from './NavDropdown'
 
 type Theme = 'dark' | 'light'
 
-const NAV_ITEMS = [
+type NavItem =
+  | { label: string; to: string; items?: never }
+  | { label: string; to: string; items: DropdownItem[] }
+
+const NAV_ITEMS: NavItem[] = [
   { label: 'Home', to: '/' },
-  { label: 'Leaderboards', to: '/leaderboards' },
-] as const
+  {
+    label: 'Players',
+    to: '/players',
+    items: [
+      { label: 'Top Players', to: '/players' },
+      { label: 'Trending Players' },       // disabled — needs arc delta backend (Phase 3)
+      { label: 'Hitters' },                // disabled — needs URL position filtering on PlayersPage
+      { label: 'Pitchers' },               // disabled — same
+      { label: 'Top Stats', to: '/leaderboards' },
+    ],
+  },
+  {
+    label: 'Leaderboards',
+    to: '/leaderboards',
+    items: [
+      { label: 'Career Arc Peaks', to: '/leaderboards' },
+      { label: 'Stat Leaders', to: '/leaderboards' },
+      { label: 'Playground Leaderboards' }, // disabled — requires playground
+    ],
+  },
+]
 
 function SunIcon() {
   return (
@@ -60,24 +84,22 @@ export default function Navbar() {
 
         {/* Desktop nav links */}
         <ul className="hidden items-center gap-10 list-none lg:flex ml-8">
-          {NAV_ITEMS.map((item) => (
-            <li key={item.label}>
-              <NavLink
-                to={item.to}
-                className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
-              >
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
-          <li>
-            <NavLink
-              to="/players"
-              className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
-            >
-              Players
-            </NavLink>
-          </li>
+          {NAV_ITEMS.map((item) =>
+            item.items ? (
+              <li key={item.label}>
+                <NavDropdown label={item.label} to={item.to} items={item.items} />
+              </li>
+            ) : (
+              <li key={item.label}>
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+                >
+                  {item.label}
+                </NavLink>
+              </li>
+            )
+          )}
           {/* TODO: wire to /playground when PlaygroundPage is built */}
           <li>
             <span className="nav-link opacity-60 cursor-default">Playground</span>
@@ -141,27 +163,50 @@ export default function Navbar() {
         <div id="mobile-nav-panel" className="border-t border-border/70 lg:hidden">
           <div className="shell-container space-y-4 py-4">
             <div className="space-y-3">
-              {NAV_ITEMS.map((item) => (
-                <NavLink
-                  key={item.label}
-                  to={item.to}
-                  onClick={closeMobileMenu}
-                  className={({ isActive }) =>
-                    `block text-[13px] font-medium ${isActive ? 'text-text' : 'text-text-muted'}`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-              <NavLink
-                to="/players"
-                onClick={closeMobileMenu}
-                className={({ isActive }) =>
-                  `block text-[13px] font-medium ${isActive ? 'text-text' : 'text-text-muted'}`
-                }
-              >
-                Players
-              </NavLink>
+              {NAV_ITEMS.map((item) =>
+                item.items ? (
+                  // Dropdown parent: show non-link label then indented sub-items
+                  <div key={item.label}>
+                    <div className="text-[11px] font-semibold uppercase tracking-widest text-text-subtle pb-1">
+                      {item.label}
+                    </div>
+                    <div className="space-y-2 pl-3">
+                      {item.items.map((sub) =>
+                        sub.to ? (
+                          <NavLink
+                            key={sub.label}
+                            to={sub.to}
+                            onClick={closeMobileMenu}
+                            className={({ isActive }) =>
+                              `block text-[13px] font-medium ${isActive ? 'text-text' : 'text-text-muted'}`
+                            }
+                          >
+                            {sub.label}
+                          </NavLink>
+                        ) : (
+                          <span
+                            key={sub.label}
+                            className="block text-[13px] font-medium text-text-subtle opacity-50 cursor-default select-none"
+                          >
+                            {sub.label}
+                          </span>
+                        )
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <NavLink
+                    key={item.label}
+                    to={item.to}
+                    onClick={closeMobileMenu}
+                    className={({ isActive }) =>
+                      `block text-[13px] font-medium ${isActive ? 'text-text' : 'text-text-muted'}`
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                )
+              )}
               {/* TODO: wire to /playground when PlaygroundPage is built */}
               <div className="text-[13px] font-medium text-text-muted opacity-60">Playground</div>
             </div>

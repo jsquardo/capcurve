@@ -1,3 +1,37 @@
+## [2026-04-06] — Session Summary (13)
+
+### Added
+- `frontend/src/components/layout/NavDropdown.tsx` — new dropdown component.
+  Props: `label`, `to` (parent route), `items[]` (each item has `label` and
+  optional `to`; absent `to` renders a disabled span). Hover-to-open with 120ms
+  close delay via `useRef` timer so cursor movement from trigger to panel doesn't
+  accidentally close the menu. Escape key closes. `aria-expanded`,
+  `aria-haspopup`, and `role="menu"` / `role="menuitem"` for accessibility.
+
+### Changed
+- `frontend/src/components/layout/Navbar.tsx`:
+  - `NAV_ITEMS` replaced with a TypeScript union-discriminated typed array;
+    flat items and dropdown items share the same array, discriminated by presence
+    of `items` field.
+  - Desktop nav: maps NAV_ITEMS — flat items → `<NavLink>`, dropdown items →
+    `<NavDropdown>`. Hardcoded Players NavLink removed.
+  - Players submenu: Top Players (live), Trending Players / Hitters / Pitchers
+    (disabled — TODO items), Top Stats (live → `/leaderboards`).
+  - Leaderboards submenu: Career Arc Peaks / Stat Leaders (both live →
+    `/leaderboards`; no deep-link until LeaderboardsPage adopts `useSearchParams`),
+    Playground Leaderboards (disabled).
+  - Mobile panel: dropdown parents render as small uppercase section headers
+    with indented sub-items; live items as NavLink, disabled as dim span.
+
+### Notes
+- LeaderboardsPage uses `useState` for category — URL deep links
+  (`/leaderboards?category=hr`) don't work yet. Both Leaderboards sub-items
+  link to `/leaderboards` for now; wire with `useSearchParams` in a future session.
+- Playground top-level nav item remains a disabled `<span>` — no `/playground`
+  route exists yet.
+
+---
+
 ## [2026-04-06] — Session Summary (12)
 
 ### Added
