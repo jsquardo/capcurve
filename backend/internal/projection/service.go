@@ -212,21 +212,27 @@ func (s *Service) findComparableMatches(target models.Player, targetHistory []mo
 		}
 
 		candidateHistory := historyByPlayer[int(candidate.ID)]
-		if len(candidateHistory) < 2 {
+		// Filter to qualified seasons only before any candidate-side logic: anchor
+		// selection, role inference, distance scoring, and future-outcome extraction
+		// must all ignore zero-score seasons (injury/sub-threshold) so they cannot
+		// misalign the anchor age, misclassify a role, inflate the distance penalty,
+		// or deflate future scores fed into the confidence band.
+		candidateQualifiedHistory := filterQualifiedSeasons(candidateHistory)
+		if len(candidateQualifiedHistory) < 2 {
 			continue
 		}
 
-		anchorIndex, ok := findComparableAnchor(targetLatest.Age, candidateHistory)
-		if !ok || anchorIndex == len(candidateHistory)-1 {
+		anchorIndex, ok := findComparableAnchor(targetLatest.Age, candidateQualifiedHistory)
+		if !ok || anchorIndex == len(candidateQualifiedHistory)-1 {
 			continue
 		}
 
-		candidateProfile := inferRoleProfile(candidate, candidateHistory[anchorIndex])
+		candidateProfile := inferRoleProfile(candidate, candidateQualifiedHistory[anchorIndex])
 		if candidateProfile.broadRole != targetProfile.broadRole {
 			continue
 		}
 
-		score := comparableDistance(target, targetHistory, targetProfile, candidate, candidateHistory, candidateProfile, anchorIndex)
+		score := comparableDistance(target, targetHistory, targetProfile, candidate, candidateQualifiedHistory, candidateProfile, anchorIndex)
 		if score > s.comparableThreshold {
 			continue
 		}
@@ -234,7 +240,7 @@ func (s *Service) findComparableMatches(target models.Player, targetHistory []mo
 		matches = append(matches, comparableMatch{
 			player:  candidate,
 			score:   score,
-			futures: candidateHistory[anchorIndex+1:],
+			futures: candidateQualifiedHistory[anchorIndex+1:],
 		})
 	}
 

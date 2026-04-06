@@ -189,6 +189,46 @@ func TestServiceBuildInfersRoleFromQualifiedHistoryNotTrailingZeroSeason(t *test
 	require.Equal(t, retiredPitcher.ID, result.Comparables[0].PlayerID)
 }
 
+func TestServiceBuildComparableAnchorSkipsZeroScoreInjurySeasonAtTargetAge(t *testing.T) {
+	// Regression: a retired comparable whose season at exactly the target player's
+	// current age is zero-score (injury/sub-threshold) must not have that season
+	// selected as the anchor. Before the fix, findComparableAnchor ran against raw
+	// history and landed on the zero-score row; comparableDistance then computed
+	// |55 - 0| / 5 = 11 pts score penalty, pushing the total past the 18-pt
+	// threshold and silently rejecting a valid comparable. After the fix,
+	// candidateQualifiedHistory filters the zero-score season out, the anchor
+	// moves to age 28 (score ~55), and the comparable is accepted.
+	service := NewService()
+
+	target := models.Player{Model: testModel(1), MLBID: 3001, FirstName: "Target", LastName: "Hitter", Position: "OF", Active: true}
+	targetHistory := []models.SeasonStat{
+		testSeason(1, 1, 2022, 27, 50, 560, 0, 18, 12, 0.278, 0.345, 0.472),
+		testSeason(2, 1, 2023, 28, 54, 580, 0, 21, 14, 0.283, 0.351, 0.488),
+		testSeason(3, 1, 2024, 29, 58, 600, 0, 24, 16, 0.291, 0.360, 0.506),
+	}
+
+	// Retired comp: age 27 and 28 are qualified, age 29 is a zero-score injury
+	// season, then age 30 and 31 are real future outcomes — those must feed the
+	// confidence band. If the zero-score age-29 season is not filtered, the anchor
+	// lands there and the score penalty blows past the comparable threshold.
+	retiredComp := models.Player{Model: testModel(2), MLBID: 3002, FirstName: "Retired", LastName: "Comp", Position: "OF", Active: false}
+	allStats := []models.SeasonStat{
+		testSeason(10, 2, 2010, 27, 49, 555, 0, 17, 11, 0.276, 0.343, 0.468),
+		testSeason(11, 2, 2011, 28, 53, 575, 0, 20, 13, 0.281, 0.349, 0.483),
+		// age 29: injury year — zero score, must be filtered before anchor selection
+		testSeason(12, 2, 2012, 29, 0, 80, 0, 3, 2, 0.210, 0.265, 0.310),
+		testSeason(13, 2, 2013, 30, 50, 562, 0, 18, 10, 0.275, 0.340, 0.461),
+		testSeason(14, 2, 2014, 31, 44, 530, 0, 15, 8, 0.268, 0.330, 0.441),
+	}
+
+	result := service.Build(target, targetHistory, []models.Player{retiredComp}, allStats)
+
+	require.Equal(t, "ready", result.Status)
+	require.Len(t, result.Comparables, 1, "comparable must be accepted when zero-score injury season at target age is filtered before anchor selection")
+	require.Equal(t, retiredComp.ID, result.Comparables[0].PlayerID)
+	require.NotEmpty(t, result.ConfidenceBand, "confidence band must be populated from future qualified seasons")
+}
+
 func testPitchSeason(id uint, playerID int, year, age int, valueScore float64, plateAppearances int, inningsPitched float64, gamesStarted, strikeouts int) models.SeasonStat {
 	return models.SeasonStat{
 		Model:            testModel(id),

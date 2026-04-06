@@ -1,3 +1,36 @@
+## [2026-04-06] — Session Summary (12)
+
+### Added
+- `backend/internal/projection/service_test.go`: regression test
+  `TestServiceBuildComparableAnchorSkipsZeroScoreInjurySeasonAtTargetAge` — a
+  retired comparable with a zero-score injury season at exactly the target
+  player's current age must still be accepted as a comparable; the zero-score
+  season must not become the anchor or appear in the futures window.
+
+### Fixed
+- `backend/internal/projection/service.go` — `findComparableMatches`: computed
+  `candidateQualifiedHistory := filterQualifiedSeasons(candidateHistory)` for
+  each retired candidate and replaced all four raw-history callsites with it:
+  - Min-seasons guard (`< 2`) now checks qualified length.
+  - `findComparableAnchor` searches qualified history, preventing a zero-score
+    injury year at the target's age from being selected as the anchor.
+  - `inferRoleProfile` reads the qualified anchor season, preventing role
+    misclassification when the raw anchor is an injury row with no PA/IP.
+  - `comparableDistance` / `trajectoryPenalty` receive qualified history,
+    preventing the zero-score anchor from inflating the score penalty past the
+    rejection threshold.
+  - `futures` slice now derived from `candidateQualifiedHistory[anchorIndex+1:]`,
+    excluding zero-score seasons from confidence band calculations.
+
+### Notes
+- All packages pass `make test`.
+- Projection engine qualified-season filtering is now fully applied on both the
+  target side (done last session) and the candidate side (done this session).
+  The projection engine is fully hardened — no zero-score seasons can influence
+  role inference, anchor selection, distance scoring, or confidence bands.
+
+---
+
 ## [2026-04-05] — Session Summary (11)
 
 ### Added
