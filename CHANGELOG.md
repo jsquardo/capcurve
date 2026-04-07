@@ -1,3 +1,28 @@
+## [2026-04-07] — Session Summary (14)
+
+### Added
+- `frontend/src/hooks/usePlayerSearch.ts` — TanStack Query search hook with
+  300ms debounce. Only fires at 2+ characters. Sub-threshold input clears
+  `debouncedQuery` immediately so stale results never linger. `staleTime: 60s`.
+- `frontend/src/components/layout/NavSearch.tsx` — player name autocomplete
+  component. Fully derived `isOpen` (no state flag). Keyboard navigation:
+  `↑`/`↓` to move highlight, `Enter` to select, `Escape` clears input.
+  Mouse hover and keyboard `activeIndex` shared. Click-outside clears input.
+  Result rows: full name, Retired badge (`active === false`), position
+  abbreviation (module-level map, full-name fallback), team from `latest_season`.
+  `SearchResultItem` extracted locally. Props: `inputClassName`, `onSelect`.
+
+### Changed
+- `frontend/src/api/index.ts` — `searchPlayers()` accepts optional `limit = 8`
+  second param forwarded as `page_size`. Backward-compatible.
+- `frontend/src/components/layout/Navbar.tsx` — both bare `<input>` blocks
+  replaced with `<NavSearch>`. Desktop: `inputClassName="w-[240px]"`. Mobile:
+  `inputClassName="w-full" onSelect={closeMobileMenu}`.
+- `frontend/src/components/layout/NavDropdown.tsx` — panel z-index bumped from
+  `z-10` to `z-[60]` for consistent stacking with NavSearch dropdown.
+
+---
+
 ## [2026-04-06] — Session Summary (13)
 
 ### Added

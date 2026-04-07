@@ -67,7 +67,7 @@ export default function NavDropdown({ label, to, items }: Props) {
         <div
           role="menu"
           aria-label={`${label} submenu`}
-          className="absolute left-0 top-full z-10 mt-2 min-w-[180px] rounded-[8px] border border-border bg-panel py-1.5 shadow-lg"
+          className="absolute left-0 top-full z-[60] mt-2 min-w-[180px] rounded-[8px] border border-border bg-panel py-1.5 shadow-lg"
         >
           {items.map((item) =>
             item.to ? (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import NavDropdown, { type DropdownItem } from './NavDropdown'
+import NavSearch from './NavSearch'
 
 type Theme = 'dark' | 'light'
 
@@ -108,17 +109,7 @@ export default function Navbar() {
 
         {/* Desktop right: search + Explore + theme toggle */}
         <div className="hidden items-center gap-3 lg:flex ml-auto">
-          <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[13px] text-text-subtle">
-              ⌕
-            </span>
-            <input
-              type="search"
-              placeholder="Search any player..."
-              aria-label="Search players"
-              className="w-[240px] rounded-[8px] border border-border bg-elevated py-2 pl-9 pr-4 text-[13px] text-text outline-none placeholder:text-text-subtle transition focus:border-accent"
-            />
-          </div>
+          <NavSearch inputClassName="w-[240px]" />
           <Link
             to="/players"
             className="rounded-[7px] bg-accent px-[18px] py-[7px] text-[13px] font-medium text-[#0a0d12] transition hover:bg-accent-strong"
@@ -210,12 +201,7 @@ export default function Navbar() {
               {/* TODO: wire to /playground when PlaygroundPage is built */}
               <div className="text-[13px] font-medium text-text-muted opacity-60">Playground</div>
             </div>
-            <input
-              type="search"
-              placeholder="Search any player..."
-              className="w-full rounded-[8px] border border-border bg-elevated py-2 px-4 text-[13px] text-text outline-none placeholder:text-text-subtle transition focus:border-accent"
-              aria-label="Search players"
-            />
+            <NavSearch inputClassName="w-full" onSelect={closeMobileMenu} />
           </div>
         </div>
       ) : null}

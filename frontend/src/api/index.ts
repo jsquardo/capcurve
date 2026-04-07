@@ -25,9 +25,10 @@ const api = axios.create({
 
 export const searchPlayers = async (
   query: string,
+  limit = 8,
 ): Promise<PlayerListItem[]> => {
   const { data } = await api.get<PlayerListResponse>("/players", {
-    params: { q: query },
+    params: { q: query, page_size: limit },
   });
   return data.data;
 };
