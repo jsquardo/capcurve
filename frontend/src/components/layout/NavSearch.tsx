@@ -48,8 +48,13 @@ export default function NavSearch({ inputClassName = 'w-[240px]', onSelect }: Pr
   const { results, isLoading } = usePlayerSearch(inputValue)
 
   // isOpen is fully derived — no separate piece of state.
-  // Escape clears inputValue, which collapses the dropdown.
-  const isOpen = inputValue.length >= 2 && (isLoading || results.length > 0)
+  // trimmedInput drives the threshold so whitespace-only input never opens
+  // the dropdown. All close paths (Escape, click-outside, handleSelect) call
+  // setInputValue(''), making trimmedInput.length < 2 and closing the panel.
+  // The results.length guard is intentionally removed so the "No players
+  // found" empty state can render when a valid query returns zero results.
+  const trimmedInput = inputValue.trim()
+  const isOpen = trimmedInput.length >= 2
 
   // Reset keyboard highlight when results change mid-type
   useEffect(() => {

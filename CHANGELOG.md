@@ -1,3 +1,18 @@
+## [2026-04-07] — Session Summary (15)
+
+### Fixed
+- `frontend/src/hooks/usePlayerSearch.ts` — trim query before all threshold
+  checks, debounce, and `useEffect` dependency. Whitespace-only input (e.g. two
+  spaces) previously passed the `length >= 2` guard and fired a request;
+  `query.trim()` at the top of the hook blocks it cleanly.
+- `frontend/src/components/layout/NavSearch.tsx` — `isOpen` now derived from
+  `trimmedInput.length >= 2` alone; removed the `results.length > 0` guard that
+  was hiding the "No players found" empty state. Dropdown correctly collapses on
+  Escape, click-outside, and selection because all those paths call
+  `setInputValue('')`, which drops `trimmedInput.length` to 0.
+
+---
+
 ## [2026-04-07] — Session Summary (14)
 
 ### Added
