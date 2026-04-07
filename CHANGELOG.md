@@ -1,3 +1,17 @@
+## [2026-04-07] — Session Summary (16)
+
+### Changed
+- `frontend/src/components/layout/NavDropdown.tsx` — replaced the decorative
+  `<span aria-hidden>` chevron with a `<button type="button">` disclosure
+  trigger. Button carries `aria-haspopup="menu"`, `aria-expanded={open}`, and
+  `aria-label="{label} submenu"`. `onClick` toggles `open`; hover-to-open
+  behavior is fully preserved. Added `focus-visible:ring-1 focus-visible:ring-accent`
+  keyboard focus ring. Split trigger pattern: `NavLink` handles navigation,
+  button handles dropdown toggle. No changes to hover logic, panel content,
+  or mobile nav.
+
+---
+
 ## [2026-04-07] — Session Summary (15)
 
 ### Fixed

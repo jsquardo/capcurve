@@ -43,9 +43,11 @@ export default function NavDropdown({ label, to, items }: Props) {
       onMouseEnter={() => { cancelClose(); setOpen(true) }}
       onMouseLeave={scheduleClose}
     >
-      {/* Trigger — NavLink navigates on click; chevron rotates when panel is open.
-          The entire outer div (NavLink + chevron) is the hover zone. */}
-      <div className="flex items-center gap-1">
+      {/* Trigger — NavLink navigates on click; the chevron button is the dedicated
+          keyboard/click toggle for the dropdown panel. Split trigger pattern:
+          NavLink = navigation, button = disclosure. Focus stays on the button
+          when the panel opens (standard ARIA disclosure pattern). */}
+      <div className="flex items-center">
         <NavLink
           to={to}
           onClick={() => setOpen(false)}
@@ -53,12 +55,16 @@ export default function NavDropdown({ label, to, items }: Props) {
         >
           {label}
         </NavLink>
-        <span
-          aria-hidden="true"
-          className={`text-[10px] text-text-subtle transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+        <button
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-label={`${label} submenu`}
+          onClick={() => setOpen((prev) => !prev)}
+          className={`ml-1 flex items-center border-0 bg-transparent p-0 m-0 leading-none text-[10px] text-text-subtle transition-transform duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded-[2px] ${open ? 'rotate-180' : ''}`}
         >
           ▾
-        </span>
+        </button>
       </div>
 
       {/* Dropdown panel — z-10 is sufficient because it inherits the navbar's z-50
