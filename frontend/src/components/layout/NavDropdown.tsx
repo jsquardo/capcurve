@@ -57,8 +57,8 @@ export default function NavDropdown({ label, to, items }: Props) {
         </NavLink>
         <button
           type="button"
-          aria-haspopup="menu"
           aria-expanded={open}
+          aria-controls={`nav-panel-${label.toLowerCase().replace(/\s+/g, '-')}`}
           aria-label={`${label} submenu`}
           onClick={() => setOpen((prev) => !prev)}
           className={`ml-1 flex items-center border-0 bg-transparent p-0 m-0 leading-none text-[10px] text-text-subtle transition-transform duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded-[2px] ${open ? 'rotate-180' : ''}`}
@@ -71,8 +71,7 @@ export default function NavDropdown({ label, to, items }: Props) {
           stacking context and therefore paints above all page content. */}
       {open && (
         <div
-          role="menu"
-          aria-label={`${label} submenu`}
+          id={`nav-panel-${label.toLowerCase().replace(/\s+/g, '-')}`}
           className="absolute left-0 top-full z-[60] mt-2 min-w-[180px] rounded-[8px] border border-border bg-panel py-1.5 shadow-lg"
         >
           {items.map((item) =>
@@ -80,7 +79,6 @@ export default function NavDropdown({ label, to, items }: Props) {
               <Link
                 key={item.label}
                 to={item.to}
-                role="menuitem"
                 onClick={() => setOpen(false)}
                 className="block rounded-[6px] px-4 py-2 text-[13px] font-medium text-text-muted transition-colors hover:bg-elevated hover:text-text"
               >
@@ -90,7 +88,6 @@ export default function NavDropdown({ label, to, items }: Props) {
               // TODO: wire these items when their destination pages/routes are built
               <span
                 key={item.label}
-                role="menuitem"
                 aria-disabled="true"
                 className="block cursor-default select-none px-4 py-2 text-[13px] font-medium text-text-subtle opacity-50"
               >

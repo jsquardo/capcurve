@@ -1,3 +1,20 @@
+## [2026-04-08] — Session Summary (17)
+
+### Fixed
+- `frontend/src/components/layout/NavDropdown.tsx` — corrected ARIA semantics
+  from application-menu pattern (`role="menu"`, `role="menuitem"`,
+  `aria-haspopup="menu"`) to plain disclosure pattern. Chevron button now uses
+  `aria-expanded` + `aria-controls="nav-panel-{label}"`. Panel div carries the
+  matching `id`. No menu roles on list items; `aria-disabled` retained on
+  disabled spans.
+
+### Added
+- `frontend/src/pages/PlayerPage.tsx` — "Stats Playground" section at the
+  bottom of the player page. Disabled `<button>` with label and TODO comment;
+  destination `/playground?player=:id` to be wired in Phase 4.
+
+---
+
 ## [2026-04-07] — Session Summary (16)
 
 ### Changed
