@@ -67,15 +67,19 @@ export default function PlayerPage() {
           <p className="text-[13px] font-medium uppercase tracking-widest text-text-subtle">
             Stats Playground
           </p>
-          {/* TODO: remove disabled and switch to <Link to={`/playground?player=${playerId}`}> when PlaygroundPage is built (Phase 4) */}
+          {/* TODO: swap for <Link to={`/playground?player=${playerId}`}> and remove aria-disabled/describedby when PlaygroundPage is built (Phase 4) */}
           <button
             type="button"
-            disabled
-            title="Stats Playground coming soon"
+            aria-disabled="true"
+            aria-describedby="playground-cta-hint"
+            onClick={(e) => e.preventDefault()}
             className="cursor-not-allowed rounded-[8px] border border-border bg-panel px-5 py-2.5 text-[13px] font-medium text-text-subtle opacity-40"
           >
             Explore in Playground →
           </button>
+          <p id="playground-cta-hint" className="text-[12px] text-text-subtle opacity-60">
+            Coming soon — available in Phase 4
+          </p>
         </div>
       </div>
     </div>

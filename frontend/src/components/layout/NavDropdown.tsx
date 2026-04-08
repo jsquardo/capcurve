@@ -15,6 +15,7 @@ type Props = {
 export default function NavDropdown({ label, to, items }: Props) {
   const [open, setOpen] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   function scheduleClose() {
     closeTimer.current = setTimeout(() => setOpen(false), 120)
@@ -37,11 +38,31 @@ export default function NavDropdown({ label, to, items }: Props) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [open])
 
+  // Close when a pointer-down lands outside this dropdown (catches clicks on
+  // non-focusable areas where blur/relatedTarget is unreliable)
+  useEffect(() => {
+    if (!open) return
+    function onPointerDown(e: PointerEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [open])
+
   return (
     <div
+      ref={containerRef}
       className="relative"
       onMouseEnter={() => { cancelClose(); setOpen(true) }}
       onMouseLeave={scheduleClose}
+      onBlur={(e) => {
+        // Close when focus leaves the entire dropdown (tab-away)
+        if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+          setOpen(false)
+        }
+      }}
     >
       {/* Trigger — NavLink navigates on click; the chevron button is the dedicated
           keyboard/click toggle for the dropdown panel. Split trigger pattern:

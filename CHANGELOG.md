@@ -1,3 +1,21 @@
+## [2026-04-08] — Session Summary (18)
+
+### Fixed
+- `frontend/src/components/layout/NavDropdown.tsx` — added focus-out and
+  click-outside close so keyboard users don't leave stale expanded panels open.
+  Added `containerRef` on root `<div>`, `onBlur` handler (checks `relatedTarget`
+  to close on tab-away), and a `pointerdown` document listener `useEffect`
+  (active only while `open`, closes on clicks outside the container). Existing
+  hover timer, Escape key, and link-click close paths unaffected.
+- `frontend/src/pages/PlayerPage.tsx` — replaced tooltip-only `disabled` button
+  Playground CTA with an accessible coming-soon pattern. Removed `disabled` +
+  `title`; added `aria-disabled="true"` (keeps element in tab order),
+  `aria-describedby="playground-cta-hint"` linked to a new visible
+  "Coming soon — available in Phase 4" label, and `onClick` prevention. Works
+  for keyboard, touch, and screen reader users.
+
+---
+
 ## [2026-04-08] — Session Summary (17)
 
 ### Fixed
