@@ -7,9 +7,13 @@
   `aria-expanded` + `aria-controls="nav-panel-{label}"`. Panel div carries the
   matching `id`. No menu roles on list items; `aria-disabled` retained on
   disabled spans.
+- `frontend/src/pages/PlayerPage.tsx` — wrapped "Explore in Playground" stub
+  in full card shell (`rounded-[8px] border border-border bg-elevated px-5 py-5
+  sm:px-6 sm:py-6`) to match the rest of the player page sections. Layout/main
+  applies no padding; each section owns its own card inset.
 
 ### Added
-- `frontend/src/pages/PlayerPage.tsx` — "Stats Playground" section at the
+- `frontend/src/pages/PlayerPage.tsx` — "Stats Playground" card section at the
   bottom of the player page. Disabled `<button>` with label and TODO comment;
   destination `/playground?player=:id` to be wired in Phase 4.
 

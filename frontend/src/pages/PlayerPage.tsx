@@ -62,19 +62,21 @@ export default function PlayerPage() {
       {arcData && arcData.projection.comparables.length > 0 && (
         <ComparablePlayersRow comparables={arcData.projection.comparables} />
       )}
-      <div className="flex flex-col items-start gap-2">
-        <p className="text-[13px] font-medium uppercase tracking-widest text-text-subtle">
-          Stats Playground
-        </p>
-        {/* TODO: remove disabled and switch to <Link to={`/playground?player=${playerId}`}> when PlaygroundPage is built (Phase 4) */}
-        <button
-          type="button"
-          disabled
-          title="Stats Playground coming soon"
-          className="cursor-not-allowed rounded-[8px] border border-border bg-panel px-5 py-2.5 text-[13px] font-medium text-text-subtle opacity-40"
-        >
-          Explore in Playground →
-        </button>
+      <div className="rounded-[8px] border border-border bg-elevated px-5 py-5 sm:px-6 sm:py-6">
+        <div className="flex flex-col items-start gap-3">
+          <p className="text-[13px] font-medium uppercase tracking-widest text-text-subtle">
+            Stats Playground
+          </p>
+          {/* TODO: remove disabled and switch to <Link to={`/playground?player=${playerId}`}> when PlaygroundPage is built (Phase 4) */}
+          <button
+            type="button"
+            disabled
+            title="Stats Playground coming soon"
+            className="cursor-not-allowed rounded-[8px] border border-border bg-panel px-5 py-2.5 text-[13px] font-medium text-text-subtle opacity-40"
+          >
+            Explore in Playground →
+          </button>
+        </div>
       </div>
     </div>
   )
