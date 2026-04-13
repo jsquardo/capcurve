@@ -7,6 +7,8 @@ import type {
   AdminDashboard,
   LeaderboardCategory,
   LeaderboardsResponse,
+  PlaygroundQueryParams,
+  PlaygroundQueryResponse,
 } from "@/types";
 
 const ensureVersionedApiBaseURL = (baseURL: string): string => {
@@ -71,6 +73,15 @@ export const getLeaderboards = async (params: {
   page_size?: number;
 }): Promise<LeaderboardsResponse> => {
   const { data } = await api.get<LeaderboardsResponse>("/leaderboards", {
+    params,
+  });
+  return data;
+};
+
+export const getPlaygroundQuery = async (
+  params?: PlaygroundQueryParams,
+): Promise<PlaygroundQueryResponse> => {
+  const { data } = await api.get<PlaygroundQueryResponse>("/playground/query", {
     params,
   });
   return data;

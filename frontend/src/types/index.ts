@@ -307,3 +307,81 @@ export interface LeaderboardsResponse {
     meta: LeaderboardMeta;
   };
 }
+
+// ── Stats Playground (GET /api/v1/playground/query) ──────────────────────────
+
+// Mirrors playgroundQueryPlayerItem in the backend response
+export interface PlaygroundQueryPlayerItem {
+  id: number;
+  mlb_id: number;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  position: string;
+  bats: string;
+  throws: string;
+  active: boolean;
+  image_url: string;
+}
+
+// Mirrors playgroundQuerySeasonItem in the backend response
+export interface PlaygroundQuerySeasonItem {
+  year: number;
+  team_id: number;
+  team_name: string;
+  age: number;
+  value_score: number;
+}
+
+// One result row — player bio + season header + hitting or pitching stats.
+// hitting/pitching field presence determines row type (same rule as SeasonStatsTable).
+export interface PlaygroundQueryItem {
+  player: PlaygroundQueryPlayerItem;
+  season: PlaygroundQuerySeasonItem;
+  hitting: HittingStats | null;
+  pitching: PitchingStats | null;
+}
+
+export interface PlaygroundQueryResponse {
+  data: PlaygroundQueryItem[];
+  meta: PlayerListMeta; // same pagination shape as player list
+}
+
+// All fields optional — only set fields are serialised as query params
+export interface PlaygroundQueryParams {
+  q?: string;
+  group?: "all" | "hitting" | "pitching";
+  position?: string; // comma-separated for multi-select
+  team?: string;
+  active?: boolean;
+  season?: number;
+  era_start?: number;
+  era_end?: number;
+  age_min?: number;
+  age_max?: number;
+  min_pa?: number;
+  max_pa?: number;
+  min_ip?: number;
+  max_ip?: number;
+  min_value_score?: number;
+  max_value_score?: number;
+  min_hr?: number;
+  max_hr?: number;
+  min_avg?: number;
+  max_avg?: number;
+  min_obp?: number;
+  max_obp?: number;
+  min_slg?: number;
+  max_slg?: number;
+  min_sb?: number;
+  max_sb?: number;
+  min_era?: number;
+  max_era?: number;
+  min_whip?: number;
+  max_whip?: number;
+  min_k9?: number;
+  max_k9?: number;
+  sort?: string;
+  page?: number;
+  page_size?: number;
+}

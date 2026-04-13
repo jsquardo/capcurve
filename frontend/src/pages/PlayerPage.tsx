@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getPlayer, getCareerArc } from '@/api'
 import PlayerPageSkeleton from '@/components/players/PlayerPageSkeleton'
@@ -67,19 +68,12 @@ export default function PlayerPage() {
           <p className="text-[13px] font-medium uppercase tracking-widest text-text-subtle">
             Stats Playground
           </p>
-          {/* TODO: swap for <Link to={`/playground?player=${playerId}`}> and remove aria-disabled/describedby when PlaygroundPage is built (Phase 4) */}
-          <button
-            type="button"
-            aria-disabled="true"
-            aria-describedby="playground-cta-hint"
-            onClick={(e) => e.preventDefault()}
-            className="cursor-not-allowed rounded-[8px] border border-border bg-panel px-5 py-2.5 text-[13px] font-medium text-text-subtle opacity-40"
+          <Link
+            to={`/playground?player=${playerId}`}
+            className="rounded-[8px] border border-border bg-panel px-5 py-2.5 text-[13px] font-medium text-text-subtle transition-colors hover:border-accent hover:text-accent"
           >
             Explore in Playground →
-          </button>
-          <p id="playground-cta-hint" className="text-[12px] text-text-subtle opacity-60">
-            Coming soon — available in Phase 4
-          </p>
+          </Link>
         </div>
       </div>
     </div>

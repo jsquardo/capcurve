@@ -16,6 +16,7 @@ export default function NavDropdown({ label, to, items }: Props) {
   const [open, setOpen] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
   function scheduleClose() {
     closeTimer.current = setTimeout(() => setOpen(false), 120)
@@ -32,7 +33,10 @@ export default function NavDropdown({ label, to, items }: Props) {
   useEffect(() => {
     if (!open) return
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') {
+        setOpen(false)
+        buttonRef.current?.focus()
+      }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
@@ -45,6 +49,7 @@ export default function NavDropdown({ label, to, items }: Props) {
     function onPointerDown(e: PointerEvent) {
       if (!containerRef.current?.contains(e.target as Node)) {
         setOpen(false)
+        buttonRef.current?.focus()
       }
     }
     document.addEventListener('pointerdown', onPointerDown)
@@ -80,6 +85,7 @@ export default function NavDropdown({ label, to, items }: Props) {
           type="button"
           aria-expanded={open}
           aria-controls={`nav-panel-${label.toLowerCase().replace(/\s+/g, '-')}`}
+          ref={buttonRef}
           aria-label={`${label} submenu`}
           onClick={() => setOpen((prev) => !prev)}
           className={`ml-1 flex items-center border-0 bg-transparent p-0 m-0 leading-none text-[10px] text-text-subtle transition-transform duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded-[2px] ${open ? 'rotate-180' : ''}`}

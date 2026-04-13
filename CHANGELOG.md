@@ -1,3 +1,46 @@
+## [2026-04-13] — Session Summary (20)
+
+### Added
+- `frontend/src/components/playground/PlaygroundLayout.tsx` — two-column layout
+  shell (fixed-width sidebar + flex main area). Stacks on mobile.
+- `frontend/src/components/playground/PlaygroundFilterGroup.tsx` — collapsible
+  section wrapper with `aria-expanded` disclosure button used inside filter panel.
+- `frontend/src/components/playground/PlaygroundFilterPanel.tsx` — full filter
+  panel for the Playground. Draft state, Run Query / Reset actions. 14 position
+  checkboxes with exact MLB `PrimaryPosition.Name` values. Group + status pill
+  toggles. Stat range inputs for hitting and pitching. Syncs with `initialParams`
+  via `useEffect` for auto-run on `?player=:id` load.
+- `frontend/src/components/playground/PlaygroundResultsHeader.tsx` — result count,
+  active-filter badge, and sort dropdown.
+- `frontend/src/components/playground/PlaygroundResultsTable.tsx` — paginated
+  results table. Hitting/pitching columns resolved from `group` or majority
+  workload presence. Arc score bar cell. Skeleton rows, empty state, pagination.
+- `frontend/src/pages/PlaygroundPage.tsx` — Playground composer page. Auto-runs
+  on `?player=:id`. Owns committed params, sort, and page state.
+
+### Changed
+- `frontend/src/App.tsx` — added `/playground` route.
+- `frontend/src/api/index.ts` — added `getPlaygroundQuery` typed Axios function.
+- `frontend/src/types/index.ts` — added playground query types
+  (`PlaygroundQueryParams`, `PlaygroundQueryItem`, `PlaygroundQueryResponse`, etc.).
+- `frontend/src/pages/PlayerPage.tsx` — replaced `aria-disabled` "Explore in
+  Playground" stub button with a real `<Link to="/playground?player=:id">`.
+
+### Fixed
+- `frontend/src/components/playground/PlaygroundFilterPanel.tsx` — Reset button
+  was overflowing its container. Added `px-4 py-2.5 text-[13px] font-medium` to
+  both action buttons; Run Query retains `flex-1`, Reset sizes to content.
+  Root cause: `.shell-button` in `index.css` defines no padding by default.
+- `frontend/src/components/layout/NavDropdown.tsx` — added focus-return to the
+  chevron disclosure button when the panel closes via Escape key or click-outside.
+  Added `buttonRef` (`useRef<HTMLButtonElement>`), attached to the chevron `<button>`,
+  and called `buttonRef.current?.focus()` in both the Escape keydown handler and
+  the pointerdown click-outside handler. Hover-out, tab-away, and link-click
+  close paths are unchanged — focus return is intentionally scoped to the two
+  dismiss gestures where the user's intent is to stay in place.
+
+---
+
 ## [2026-04-08] — Session Summary (18)
 
 ### Fixed
