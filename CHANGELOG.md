@@ -1,3 +1,37 @@
+## [2026-04-15] — Session Summary (21)
+
+### Changed
+- `frontend/src/components/playground/PlaygroundFilterPanel.tsx` — group toggle
+  now calls `handleGroupChange(g)` which atomically clears incompatible stat
+  filters: switching to `hitting` zeroes all eight pitching range keys;
+  switching to `pitching` zeroes all twelve hitting range keys. Prevents the
+  backend's `validatePlaygroundGroupFilters` 400 from ever firing.
+- `frontend/src/components/playground/PlaygroundFilterPanel.tsx` — season and
+  era inputs now enforce mutual exclusivity at the point of entry. Typing a
+  season value clears `era_start`/`era_end` in the same `setDraft` call; typing
+  either era value clears `season`. Added `key` props to both `RangeRow`
+  components so they remount when the opposing group is cleared, forcing browsers
+  to reliably reflect the empty controlled value (works around a `type="number"`
+  + React controlled-input edge case).
+- `frontend/src/pages/PlaygroundPage.tsx` — destructures `isError` and `error`
+  from `useQuery`; adds `retry: false` so validation 400s are never retried;
+  adds `extractErrorMessage` helper reading `err.response.data.error` (confirmed
+  `{"error":"..."}` envelope shape); renders a visible error banner between the
+  results header and table when `isError` is true; resets `sort` to
+  `'-value_score'` in `handleSearch` when the current sort is incompatible with
+  the incoming group; passes `group` prop to `PlaygroundResultsHeader`.
+- `frontend/src/components/playground/PlaygroundResultsHeader.tsx` — `SORT_OPTIONS`
+  entries now carry an optional `group` tag; `visibleOptions` filters the list
+  so hitting-only sorts (HR, AVG, OBP, SLG) are hidden when `group=pitching`
+  and pitching-only sorts (ERA, K/9, IP) are hidden when `group=hitting`.
+  Accepts new `group?` prop.
+- `frontend/src/components/layout/Navbar.tsx` — replaced the two Playground
+  stubs (desktop `<span>` + mobile `<div>`) with real `<NavLink to="/playground">`
+  elements. Desktop uses existing `nav-link`/`nav-link-active` classes; mobile
+  calls `closeMobileMenu` on click.
+
+---
+
 ## [2026-04-13] — Session Summary (20)
 
 ### Added

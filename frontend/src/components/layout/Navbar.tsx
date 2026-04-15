@@ -101,9 +101,13 @@ export default function Navbar() {
               </li>
             )
           )}
-          {/* TODO: wire to /playground when PlaygroundPage is built */}
           <li>
-            <span className="nav-link opacity-60 cursor-default">Playground</span>
+            <NavLink
+              to="/playground"
+              className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+            >
+              Playground
+            </NavLink>
           </li>
         </ul>
 
@@ -198,8 +202,15 @@ export default function Navbar() {
                   </NavLink>
                 )
               )}
-              {/* TODO: wire to /playground when PlaygroundPage is built */}
-              <div className="text-[13px] font-medium text-text-muted opacity-60">Playground</div>
+              <NavLink
+                to="/playground"
+                onClick={closeMobileMenu}
+                className={({ isActive }) =>
+                  `block text-[13px] font-medium ${isActive ? 'text-text' : 'text-text-muted'}`
+                }
+              >
+                Playground
+              </NavLink>
             </div>
             <NavSearch inputClassName="w-full" onSelect={closeMobileMenu} />
           </div>

@@ -74,6 +74,35 @@ export default function PlaygroundFilterPanel({ initialParams, onSearch, onReset
     return draft.position ? draft.position.split(',').map((s) => s.trim()).filter(Boolean) : []
   }
 
+  // Switching groups clears incompatible stat filters in one atomic update so
+  // the backend's validatePlaygroundGroupFilters can never reject the submission.
+  function handleGroupChange(g: 'all' | 'hitting' | 'pitching') {
+    const group = g === 'all' ? undefined : g
+    if (g === 'hitting') {
+      setDraft((prev) => ({
+        ...prev,
+        group,
+        min_ip: undefined, max_ip: undefined,
+        min_era: undefined, max_era: undefined,
+        min_whip: undefined, max_whip: undefined,
+        min_k9: undefined, max_k9: undefined,
+      }))
+    } else if (g === 'pitching') {
+      setDraft((prev) => ({
+        ...prev,
+        group,
+        min_pa: undefined, max_pa: undefined,
+        min_hr: undefined, max_hr: undefined,
+        min_avg: undefined, max_avg: undefined,
+        min_obp: undefined, max_obp: undefined,
+        min_slg: undefined, max_slg: undefined,
+        min_sb: undefined, max_sb: undefined,
+      }))
+    } else {
+      set('group', undefined)
+    }
+  }
+
   function handleReset() {
     setDraft(EMPTY)
     onReset()
@@ -117,7 +146,7 @@ export default function PlaygroundFilterPanel({ initialParams, onSearch, onReset
               <button
                 key={g}
                 type="button"
-                onClick={() => set('group', g === 'all' ? undefined : g)}
+                onClick={() => handleGroupChange(g)}
                 className={groupBtnClass((draft.group ?? 'all') === g)}
               >
                 {g.charAt(0).toUpperCase() + g.slice(1)}
@@ -168,22 +197,41 @@ export default function PlaygroundFilterPanel({ initialParams, onSearch, onReset
       {/* ── Season / Era ── */}
       <PlaygroundFilterGroup label="Season / Era" defaultOpen={false}>
         <div className="space-y-2">
+          {/* Setting a season clears era range (and vice versa) — the backend
+              rejects requests that combine season with era_start/era_end. */}
+          {/* key changes when the opposing field group is cleared, forcing a
+              remount so browsers reliably reflect the empty controlled value.
+              type="number" inputs can silently ignore programmatic value=""
+              updates without this. */}
           <RangeRow
+            key={`season-${draft.era_start !== undefined || draft.era_end !== undefined ? 1 : 0}`}
             label="Season"
             minVal={draft.season?.toString() ?? ''}
             maxVal={''}
-            onMinChange={(v) => set('season', optInt(v))}
+            onMinChange={(v) =>
+              setDraft((prev) => ({
+                ...prev,
+                season: optInt(v),
+                era_start: undefined,
+                era_end: undefined,
+              }))
+            }
             onMaxChange={() => {}}
             minPlaceholder="e.g. 2023"
             maxPlaceholder=""
             singleValue
           />
           <RangeRow
+            key={`era-${draft.season !== undefined ? 1 : 0}`}
             label="Era"
             minVal={draft.era_start?.toString() ?? ''}
             maxVal={draft.era_end?.toString() ?? ''}
-            onMinChange={(v) => set('era_start', optInt(v))}
-            onMaxChange={(v) => set('era_end', optInt(v))}
+            onMinChange={(v) =>
+              setDraft((prev) => ({ ...prev, era_start: optInt(v), season: undefined }))
+            }
+            onMaxChange={(v) =>
+              setDraft((prev) => ({ ...prev, era_end: optInt(v), season: undefined }))
+            }
             minPlaceholder="From"
             maxPlaceholder="To"
           />

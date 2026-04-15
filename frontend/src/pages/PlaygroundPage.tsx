@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import type { AxiosError } from 'axios'
 import { getPlayer, getPlaygroundQuery } from '@/api'
 import type { PlaygroundQueryParams } from '@/types'
 import PlaygroundLayout from '@/components/playground/PlaygroundLayout'
@@ -11,6 +12,18 @@ import PlaygroundResultsTable from '@/components/playground/PlaygroundResultsTab
 // Fields excluded from the active-filter count — they're pagination/sort controls,
 // not meaningful user-set filters.
 const EXCLUDED_PARAM_KEYS: (keyof PlaygroundQueryParams)[] = ['sort', 'page', 'page_size']
+
+// Sort values that only make sense for a specific group. Used to reset a stale
+// sort when the user submits a query with a different group.
+const HITTING_ONLY_SORTS = ['-home_runs', 'home_runs', '-batting_avg', 'batting_avg', '-obp', 'obp', '-slg', 'slg']
+const PITCHING_ONLY_SORTS = ['-era', 'era', '-strikeouts_per_9', 'strikeouts_per_9', '-innings_pitched', 'innings_pitched']
+
+// Extract a human-readable message from a backend 400 error. The playground
+// endpoint wraps all errors as { "error": "..." }.
+function extractErrorMessage(err: unknown): string {
+  const axiosErr = err as AxiosError<{ error?: string }>
+  return axiosErr?.response?.data?.error ?? 'An unexpected error occurred. Please try again.'
+}
 
 function countActiveFilters(params: PlaygroundQueryParams | null): number {
   if (!params) return 0
@@ -48,13 +61,22 @@ export default function PlaygroundPage() {
     ? { q: preloadPlayer.full_name }
     : undefined
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['playground-query', committedParams, sort, page],
     queryFn: () => getPlaygroundQuery({ ...committedParams, sort, page, page_size: 25 }),
     enabled: committedParams !== null,
+    retry: false, // validation 400s must never be retried automatically
   })
 
   function handleSearch(params: PlaygroundQueryParams) {
+    // Reset sort if the current sort field is incompatible with the incoming group
+    // (e.g. ERA sort with group=hitting). Arc Score is always safe.
+    const incomingGroup = params.group
+    const sortIsIncompatible =
+      (incomingGroup === 'hitting' && PITCHING_ONLY_SORTS.includes(sort)) ||
+      (incomingGroup === 'pitching' && HITTING_ONLY_SORTS.includes(sort))
+    if (sortIsIncompatible) setSort('-value_score')
+
     setCommittedParams(params)
     setPage(1)
   }
@@ -106,7 +128,13 @@ export default function PlaygroundPage() {
         activeFilterCount={countActiveFilters(committedParams)}
         sort={sort}
         onSortChange={handleSortChange}
+        group={group}
       />
+      {isError && (
+        <div className="mb-4 rounded-[6px] border border-red-400/30 bg-red-400/5 px-4 py-3 text-[13px] text-red-300">
+          {extractErrorMessage(error)}
+        </div>
+      )}
       <PlaygroundResultsTable
         items={items}
         isLoading={isLoading}
